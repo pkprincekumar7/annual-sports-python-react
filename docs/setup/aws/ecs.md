@@ -233,8 +233,8 @@ REPORTING_SD_ARN=$(aws servicediscovery create-service \
 
 ### 7) Create IAM Roles
 
-Create an execution role (pull images, write logs, read secrets) and a task role
-(app runtime permissions):
+Create an execution role (pull images, write logs, read secrets) and per-service
+task roles (app runtime permissions):
 
 ```bash
 cat > ecs-task-trust-policy.json <<'EOF'
@@ -274,14 +274,27 @@ cat > ecs-secrets-policy.json <<'EOF'
 }
 EOF
 
+Note: For least-privilege access (as in Terraform), replace `"Resource": "*"` with
+the specific secret ARNs (JWT, Mongo URI, and identity email secrets).
+
 aws iam put-role-policy \
   --role-name "${NAME_PREFIX}-task-execution" \
   --policy-name ecs-secrets-policy \
   --policy-document file://ecs-secrets-policy.json
 
-aws iam create-role \
-  --role-name "${NAME_PREFIX}-task-role" \
-  --assume-role-policy-document file://ecs-task-trust-policy.json
+for service in \
+  identity-service \
+  enrollment-service \
+  department-service \
+  sports-participation-service \
+  event-configuration-service \
+  scheduling-service \
+  scoring-service \
+  reporting-service; do
+  aws iam create-role \
+    --role-name "${NAME_PREFIX}-${service}-task-role" \
+    --assume-role-policy-document file://ecs-task-trust-policy.json
+done
 ```
 
 ### 8) Create CloudWatch Log Groups
@@ -312,11 +325,14 @@ Create a task definition per microservice (Fargate):
   - services: `8001`–`8008`
 - Environment variables per service:
   - Non-secret values (app settings + service URLs) should match `x-common-env` in `docker-compose.yml`.
-- `DATABASE_NAME` differs per service (use your `${NAME_PREFIX}-...` names).
+- `DATABASE_NAME` differs per service (use `${NAME_PREFIX}-identity`, `${NAME_PREFIX}-enrollment`, etc.).
   - Secrets should come from AWS Secrets Manager:
     - `JWT_SECRET` from `jwt_secret_arn`
     - `MONGODB_URI` from `mongo_uri_secret_arn` (shared)
     - identity email secrets from their respective ARNs
+
+Health check command should call the `/health` endpoint (for example,
+`curl -fsS http://localhost:<port>/health > /dev/null`).
 
 For service URL variables (`IDENTITY_URL`, `ENROLLMENT_URL`, etc.), use Cloud Map DNS:
 - `http://identity-service.${SERVICE_NAMESPACE}:8001`
@@ -407,10 +423,11 @@ REDIS_ENDPOINT=$(aws elasticache describe-cache-clusters \
 
 # IAM roles (create or reuse existing)
 EXECUTION_ROLE_ARN=$(aws iam get-role --role-name "${NAME_PREFIX}-task-execution" --query 'Role.Arn' --output text)
-TASK_ROLE_ARN=$(aws iam get-role --role-name "${NAME_PREFIX}-task-role" --query 'Role.Arn' --output text)
 
 mkdir -p task-defs/rendered
 for file in task-defs/*.json; do
+  service=$(basename "$file" .json)
+  TASK_ROLE_ARN=$(aws iam get-role --role-name "${NAME_PREFIX}-${service}-task-role" --query 'Role.Arn' --output text)
   envsubst < "$file" > "task-defs/rendered/$(basename "$file")"
 done
 ```

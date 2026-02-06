@@ -21,17 +21,9 @@ Recommended bucket/table setup:
 
 ### 1) Configure Secrets Manager Names
 
-Terraform creates the Secrets Manager resources. You only need to provide the
-secret names in `tfvars`. Populate secret values separately in AWS Secrets Manager.
-
-Required names:
-- `jwt_secret_name`
-- `mongo_uri_secret_name` (shared MongoDB URI; DB name comes from `DATABASE_NAME`)
-- Identity-only email secret names:
-  - `gmail_app_password_secret_name`
-  - `sendgrid_api_key_secret_name`
-  - `resend_api_key_secret_name`
-  - `smtp_password_secret_name`
+Terraform creates the Secrets Manager resources. Secret names are derived from
+`env` (for example, `as-dev-jwt`, `as-dev-mongo-uri`, etc.). Populate secret
+values separately in AWS Secrets Manager.
 
 ### 2) Initialize Terraform
 
@@ -43,35 +35,24 @@ cp tfvars/dev.tfvars.example dev.tfvars
 
 Update `dev.tfvars`:
 - `aws_account_id`, `aws_region`
-- `cluster_name`
-- `name_prefix` (short prefix like `as-dev` for shared AWS resource names)
-- `service_discovery_namespace` (private DNS, example: `as-dev.local`)
+- `env` (used to derive names like `as-dev`)
 - `public_subnets`, `private_subnets`, `availability_zones`
 - `api_domain` (optional, API domain)
 - `route53_zone_id` (optional, to auto-create API DNS record)
-- `acm_certificate_arn` (optional, enables HTTPS listener for API/ALB)
+- `acm_certificate_arn` (required, enables HTTPS-only ALB)
 - `image_tag` (must match the tag you push)
-- `database_names` (map; one DB per service)
-- `jwt_secret_name`, `mongo_uri_secret_name`, and identity email secret names
 - Optional app config: `jwt_expires_in`, `admin_reg_number`, `app_env`, `log_level`
+- Optional autoscaling overrides: `autoscale_min`, `autoscale_max`, `autoscale_cpu_target`,
+  `autoscale_memory_target`, `autoscale_alb_requests_target`
+- Optional observability overrides: `log_retention_days`, `alarm_cpu_threshold`,
+  `alarm_memory_threshold`, `alarm_sns_topic_arn`
+- Per-service sizing: `service_cpu_map`, `service_memory_map`, `ulimit_nofile_soft`, `ulimit_nofile_hard`
 - Optional email config: `email_provider`, `gmail_user`, `sendgrid_user`,
   `smtp_host`, `smtp_user`, `smtp_port`, `smtp_secure`, `email_from`, `email_from_name`
 - Optional branding: `app_name`
 
-Example `database_names` map:
-
-```hcl
-database_names = {
-  "identity-service"             = "as-dev-identity"
-  "enrollment-service"           = "as-dev-enrollment"
-  "department-service"           = "as-dev-department"
-  "sports-participation-service" = "as-dev-sports-part"
-  "event-configuration-service"  = "as-dev-event-config"
-  "scheduling-service"           = "as-dev-scheduling"
-  "scoring-service"              = "as-dev-scoring"
-  "reporting-service"            = "as-dev-reporting"
-}
-```
+Database names are derived automatically using `env` (for example,
+`as-dev-identity`, `as-dev-enrollment`, etc.).
 
 ### 3) Create ECR Repositories (Target Apply)
 
@@ -218,7 +199,7 @@ terraform output -raw alb_dns_name
 Then test the API:
 
 ```bash
-curl -I http://<alb-dns-name>/identities/docs
+curl -I https://<alb-dns-name>/identities/docs
 ```
 
 If you provided `acm_certificate_arn` and DNS, use HTTPS:
@@ -330,5 +311,5 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 - The MongoDB URI secret is shared; each service selects the DB via `DATABASE_NAME`.
 - Set `route53_zone_id` in tfvars to have Terraform create the API Route 53 record (`api_domain`).
 - Redis is provisioned via ElastiCache; the services use that endpoint automatically.
-- Cloud Map service discovery is enabled; set an environment-specific `service_discovery_namespace` in tfvars.
+- Cloud Map service discovery is enabled; it is derived from `env` (for example, `annual-sports.dev.local`).
 - ECS tasks run in private subnets; only the ALB is public.

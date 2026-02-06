@@ -8,15 +8,10 @@ variable "aws_account_id" {
   description = "AWS account ID for ECR image URLs."
 }
 
-variable "cluster_name" {
+variable "env" {
   type        = string
-  default     = "annual-sports"
-  description = "ECS cluster name."
-}
-
-variable "name_prefix" {
-  type        = string
-  description = "Short prefix for naming shared AWS resources (include env, e.g., as-dev)."
+  default     = "dev"
+  description = "Environment name used to derive defaults (dev, qa, stg, perf, prod)."
 }
 
 variable "vpc_cidr" {
@@ -28,16 +23,28 @@ variable "vpc_cidr" {
 variable "public_subnets" {
   type        = list(string)
   description = "Public subnet CIDRs (2+)."
+  validation {
+    condition     = length(var.public_subnets) >= 2
+    error_message = "Provide at least 2 public subnets for multi-AZ resiliency."
+  }
 }
 
 variable "private_subnets" {
   type        = list(string)
   description = "Private subnet CIDRs (2+)."
+  validation {
+    condition     = length(var.private_subnets) >= 2
+    error_message = "Provide at least 2 private subnets for multi-AZ resiliency."
+  }
 }
 
 variable "availability_zones" {
   type        = list(string)
   description = "Availability zones for subnets."
+  validation {
+    condition     = length(var.availability_zones) >= 2
+    error_message = "Provide at least 2 availability zones for multi-AZ resiliency."
+  }
 }
 
 variable "image_tag" {
@@ -54,8 +61,11 @@ variable "api_domain" {
 
 variable "acm_certificate_arn" {
   type        = string
-  default     = ""
-  description = "Optional ACM certificate ARN for the ALB HTTPS listener (API)."
+  description = "ACM certificate ARN for the ALB HTTPS listener (API)."
+  validation {
+    condition     = var.acm_certificate_arn != ""
+    error_message = "acm_certificate_arn is required for HTTPS-only ALB."
+  }
 }
 
 variable "route53_zone_id" {
@@ -76,12 +86,6 @@ variable "redis_num_cache_nodes" {
   description = "Number of Redis cache nodes."
 }
 
-variable "service_discovery_namespace" {
-  type        = string
-  default     = "annual-sports.local"
-  description = "Private DNS namespace for service discovery."
-}
-
 variable "service_cpu" {
   type        = number
   default     = 512
@@ -94,19 +98,82 @@ variable "service_memory" {
   description = "Memory (MiB) for each service task."
 }
 
-variable "mongo_uri_secret_name" {
-  type        = string
-  description = "Secrets Manager secret name for MongoDB URI (shared)."
+variable "service_cpu_map" {
+  type        = map(number)
+  default     = {}
+  description = "Optional per-service CPU overrides."
 }
 
-variable "database_names" {
-  type        = map(string)
-  description = "Database names per service."
+variable "service_memory_map" {
+  type        = map(number)
+  default     = {}
+  description = "Optional per-service memory overrides."
 }
 
-variable "jwt_secret_name" {
+variable "ulimit_nofile_soft" {
+  type        = number
+  default     = 65535
+  description = "Soft nofile ulimit for containers."
+}
+
+variable "ulimit_nofile_hard" {
+  type        = number
+  default     = 65535
+  description = "Hard nofile ulimit for containers."
+}
+
+variable "autoscale_min" {
+  type        = number
+  default     = 1
+  description = "Minimum ECS desired count for autoscaling."
+}
+
+variable "autoscale_max" {
+  type        = number
+  default     = 4
+  description = "Maximum ECS desired count for autoscaling."
+}
+
+variable "autoscale_cpu_target" {
+  type        = number
+  default     = 60
+  description = "Target CPU utilization percentage for autoscaling."
+}
+
+variable "autoscale_memory_target" {
+  type        = number
+  default     = 70
+  description = "Target memory utilization percentage for autoscaling."
+}
+
+variable "autoscale_alb_requests_target" {
+  type        = number
+  default     = 200
+  description = "Target ALB requests per target for autoscaling."
+}
+
+variable "log_retention_days" {
+  type        = number
+  default     = 14
+  description = "CloudWatch log retention in days."
+}
+
+variable "alarm_cpu_threshold" {
+  type        = number
+  default     = 80
+  description = "CPU utilization alarm threshold."
+}
+
+variable "alarm_memory_threshold" {
+  type        = number
+  default     = 80
+  description = "Memory utilization alarm threshold."
+}
+
+variable "alarm_sns_topic_arn" {
   type        = string
-  description = "Secrets Manager secret name for JWT secret."
+  default     = ""
+  description = "Optional SNS topic ARN for alarm notifications."
 }
 
 variable "jwt_expires_in" {
@@ -145,28 +212,10 @@ variable "gmail_user" {
   description = "Gmail user for email."
 }
 
-variable "gmail_app_password_secret_name" {
-  type        = string
-  default     = ""
-  description = "Secrets Manager secret name for Gmail app password."
-}
-
 variable "sendgrid_user" {
   type        = string
   default     = ""
   description = "SendGrid user."
-}
-
-variable "sendgrid_api_key_secret_name" {
-  type        = string
-  default     = ""
-  description = "Secrets Manager secret name for SendGrid API key."
-}
-
-variable "resend_api_key_secret_name" {
-  type        = string
-  default     = ""
-  description = "Secrets Manager secret name for Resend API key."
 }
 
 variable "smtp_host" {
@@ -179,12 +228,6 @@ variable "smtp_user" {
   type        = string
   default     = ""
   description = "SMTP user."
-}
-
-variable "smtp_password_secret_name" {
-  type        = string
-  default     = ""
-  description = "Secrets Manager secret name for SMTP password."
 }
 
 variable "smtp_port" {
