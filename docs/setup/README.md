@@ -43,10 +43,10 @@ This folder contains setup-focused documentation for the new microservices struc
 
 ## AWS
 - `aws/eks.md` - AWS EKS deployment (ECR, ALB, TLS)
-- `../infra/aws/eks/README.md` - AWS EKS with Terraform (infra + ALB)
+- `../infra/aws/eks-backend/README.md` - AWS EKS with Terraform (backend + ALB)
 - `aws/ecs.md` - AWS ECS Fargate deployment (ALB, TLS)
-- `../infra/aws/ecs/backend/README.md` - AWS ECS Fargate with Terraform (backend)
-- `../infra/aws/ecs/frontend/README.md` - AWS Frontend with Terraform (S3 + CloudFront)
+- `../infra/aws/ecs-backend/README.md` - AWS ECS Fargate with Terraform (backend)
+- `../infra/aws/frontend/README.md` - AWS Frontend with Terraform (S3 + CloudFront)
 
 ## Azure
 - `azure/aks.md` - Azure AKS deployment (Terraform entry point)

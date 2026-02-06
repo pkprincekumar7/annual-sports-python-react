@@ -16,8 +16,8 @@ It assumes you already have a domain and can create DNS records.
 
 If you want Terraform to provision everything end-to-end, use the separate stacks:
 
-- Backend: `infra/aws/ecs/backend/README.md`
-- Frontend: `infra/aws/ecs/frontend/README.md`
+- Backend: `infra/aws/ecs-backend/README.md`
+- Frontend: `infra/aws/frontend/README.md`
 
 ## Manual Setup (Console or CLI)
 
@@ -665,7 +665,7 @@ aws ecs create-service \
 ### 14) Host Frontend on S3 + CloudFront
 
 If you prefer Terraform for frontend hosting, use:
-`infra/aws/ecs/frontend/README.md`. The steps below are manual.
+`infra/aws/frontend/README.md`. The steps below are manual.
 
 Build and upload the static frontend:
 

@@ -20,14 +20,14 @@ aws configure
 
 ## 2) Terraform (Recommended)
 
-Terraform for EKS lives in:
+Terraform for the EKS backend lives in:
 
-`infra/aws/eks`
+`infra/aws/eks-backend`
 
 Quick start:
 
 ```bash
-cd infra/aws/eks
+cd infra/aws/eks-backend
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars
@@ -47,7 +47,6 @@ aws ecr create-repository --repository-name annual-sports-event-configuration-se
 aws ecr create-repository --repository-name annual-sports-scheduling-service
 aws ecr create-repository --repository-name annual-sports-scoring-service
 aws ecr create-repository --repository-name annual-sports-reporting-service
-aws ecr create-repository --repository-name annual-sports-frontend
 ```
 
 You will set `AWS_ACCOUNT_ID` and `AWS_REGION` in step 4.
@@ -91,16 +90,8 @@ for service in \
   docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-${service}:${IMAGE_TAG}"
 done
 
-docker build -t annual-sports-frontend:${IMAGE_TAG} \
-  --build-arg VITE_API_URL=/ \
-  frontend
-docker tag annual-sports-frontend:${IMAGE_TAG} \
-  "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-frontend:${IMAGE_TAG}"
-
-docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-frontend:${IMAGE_TAG}"
 ```
 
-`VITE_API_URL` is a build-time value; changing it requires a rebuild.
 
 ## 5) Create an EKS Cluster
 
@@ -212,10 +203,10 @@ kubectl apply -f docs/setup/ubuntu/k8s/mongodb.yaml
 kubectl -n "$NAMESPACE" rollout status statefulset/mongodb
 ```
 
-## 9) Deploy Services and Frontend
+## 9) Deploy Services (Backend)
 
-Create one Deployment/Service per microservice using the manifests in `docs/setup/ubuntu/k8s`,
-then apply the frontend manifest. EKS uses ALB path routing; do not use the NGINX gateway.
+Create one Deployment/Service per microservice using the manifests in `docs/setup/ubuntu/k8s`.
+EKS uses ALB path routing; do not use the NGINX gateway.
 
 ```bash
 kubectl apply -f docs/setup/ubuntu/k8s/identity-service.yaml
@@ -226,16 +217,13 @@ kubectl apply -f docs/setup/ubuntu/k8s/event-configuration-service.yaml
 kubectl apply -f docs/setup/ubuntu/k8s/scheduling-service.yaml
 kubectl apply -f docs/setup/ubuntu/k8s/scoring-service.yaml
 kubectl apply -f docs/setup/ubuntu/k8s/reporting-service.yaml
-kubectl apply -f docs/setup/ubuntu/k8s/frontend.yaml
-
 kubectl -n "$NAMESPACE" rollout status deploy/identity-service
-kubectl -n "$NAMESPACE" rollout status deploy/annual-sports-frontend
 ```
 
 ## 10) Create an Ingress (ALB)
 
 Create an `ingress.yaml` using ALB. Use `CERT_ARN` from step 4 to replace
-arm-certificate-arn and replace host, then apply it:
+arm-certificate-arn and replace the API host, then apply it:
 
 ```bash
 cat <<'EOF' > ingress.yaml
@@ -253,72 +241,6 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
   rules:
-    - host: your-domain.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: annual-sports-frontend
-                port:
-                  number: 80
-          - path: /identities
-            pathType: Prefix
-            backend:
-              service:
-                name: identity-service
-                port:
-                  number: 8001
-          - path: /enrollments
-            pathType: Prefix
-            backend:
-              service:
-                name: enrollment-service
-                port:
-                  number: 8002
-          - path: /departments
-            pathType: Prefix
-            backend:
-              service:
-                name: department-service
-                port:
-                  number: 8003
-          - path: /sports-participations
-            pathType: Prefix
-            backend:
-              service:
-                name: sports-participation-service
-                port:
-                  number: 8004
-          - path: /event-configurations
-            pathType: Prefix
-            backend:
-              service:
-                name: event-configuration-service
-                port:
-                  number: 8005
-          - path: /schedulings
-            pathType: Prefix
-            backend:
-              service:
-                name: scheduling-service
-                port:
-                  number: 8006
-          - path: /scorings
-            pathType: Prefix
-            backend:
-              service:
-                name: scoring-service
-                port:
-                  number: 8007
-          - path: /reportings
-            pathType: Prefix
-            backend:
-              service:
-                name: reporting-service
-                port:
-                  number: 8008
     - host: api.your-domain.com
       http:
         paths:
@@ -391,27 +313,25 @@ kubectl -n "$NAMESPACE" get ingress
 
 Create DNS records pointing your domains to the ALB hostname.
 
-## 11) Update Frontend API URL
+## 11) Frontend Hosting (S3 + CloudFront)
 
-If you are using a separate API domain:
-- Set `VITE_API_URL=https://api.your-domain.com` and rebuild the frontend image.
+The frontend is hosted via the shared CloudFront/S3 stack:
+`infra/aws/frontend`.
 
-If you are using a single domain:
-- Set `VITE_API_URL=https://your-domain.com` and rebuild.
-
-Push the new image and update the deployment.
+Build the frontend with `VITE_API_URL` pointing to your API domain
+(for example: `https://api.your-domain.com`) and deploy it using that stack.
 
 ## 12) Verify
 
 ```bash
-curl -I https://your-domain.com
-curl -I https://your-domain.com/identities/docs
+curl -I https://api.your-domain.com
+curl -I https://api.your-domain.com/identities/docs
 ```
 
 ## Manual Setup (Console)
 
 If you prefer the AWS Console:
-- ECR: create repositories for each service plus `annual-sports-frontend`.
+- ECR: create repositories for each service.
 - EKS: create a cluster with managed node group (2+ nodes), then update kubeconfig.
 - IAM OIDC: enable the OIDC provider for the cluster.
 - Load Balancer Controller: create the IAM role + service account (IRSA), then install the Helm chart.
@@ -452,7 +372,6 @@ Remove Kubernetes resources:
 
 ```bash
 kubectl delete ingress -n "$NAMESPACE" "${NAMESPACE}-ingress"
-kubectl delete -f docs/setup/ubuntu/k8s/frontend.yaml
 kubectl delete -f docs/setup/ubuntu/k8s/identity-service.yaml
 kubectl delete -f docs/setup/ubuntu/k8s/enrollment-service.yaml
 kubectl delete -f docs/setup/ubuntu/k8s/department-service.yaml
@@ -496,7 +415,6 @@ aws ecr delete-repository --repository-name annual-sports-event-configuration-se
 aws ecr delete-repository --repository-name annual-sports-scheduling-service --force
 aws ecr delete-repository --repository-name annual-sports-scoring-service --force
 aws ecr delete-repository --repository-name annual-sports-reporting-service --force
-aws ecr delete-repository --repository-name annual-sports-frontend --force
 ```
 
 ## Best Practices Notes
@@ -508,4 +426,5 @@ aws ecr delete-repository --repository-name annual-sports-frontend --force
 
 ## Terraform Option
 
-If you want Infrastructure as Code, use `infra/aws/eks/README.md`.
+If you want Infrastructure as Code, use `infra/aws/eks-backend/README.md`
+for backend and `infra/aws/frontend/README.md` for frontend hosting.

@@ -1,0 +1,33 @@
+# Example values for perf
+aws_region      = "us-east-1"
+aws_account_id  = "123456789012"
+cluster_name    = "annual-sports-perf"
+vpc_cidr        = "10.40.0.0/16"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets      = ["10.40.1.0/24", "10.40.2.0/24"]
+private_subnets     = ["10.40.11.0/24", "10.40.12.0/24"]
+
+api_domain = "sports-perf-api.your-domain.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+
+image_tag = "latest"
+
+mongo_uri = "mongodb+srv://user:pass@cluster"
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-perf"
+  "enrollment-service"           = "annual-sports-enrollment-perf"
+  "department-service"           = "annual-sports-department-perf"
+  "sports-participation-service" = "annual-sports-participation-perf"
+  "event-configuration-service"  = "annual-sports-event-config-perf"
+  "scheduling-service"           = "annual-sports-scheduling-perf"
+  "scoring-service"              = "annual-sports-scoring-perf"
+  "reporting-service"            = "annual-sports-reporting-perf"
+}
+
+jwt_secret = "replace-with-strong-secret"
+email_provider = "gmail"
+gmail_user = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from = "no-reply@your-domain.com"
