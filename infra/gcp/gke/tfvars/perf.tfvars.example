@@ -1,0 +1,44 @@
+# Example values for perf (GKE)
+project_id              = "my-gcp-project"
+region                  = "us-central1"
+zones                   = ["us-central1-a", "us-central1-b"]
+cluster_name            = "annual-sports-perf-gke"
+network_name            = "annual-sports-perf-vpc"
+subnet_name             = "annual-sports-perf-subnet"
+subnet_cidr             = "10.33.0.0/16"
+artifact_registry_name  = "annual-sports-perf"
+dns_zone_name           = "your-domain.com"
+dns_zone_resource_name  = "learning-dev-zone"
+use_existing_dns_zone   = false
+dns_zone_project        = ""
+domain                  = "sports-perf.your-domain.com"
+api_domain              = "sports-perf-api.your-domain.com"
+image_tag               = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-perf"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-perf"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-perf"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-perf"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-perf"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-perf"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-perf"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-perf"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-perf"
+  "enrollment-service"           = "annual-sports-enrollment-perf"
+  "department-service"           = "annual-sports-department-perf"
+  "sports-participation-service" = "annual-sports-participation-perf"
+  "event-configuration-service"  = "annual-sports-event-config-perf"
+  "scheduling-service"           = "annual-sports-scheduling-perf"
+  "scoring-service"              = "annual-sports-scoring-perf"
+  "reporting-service"            = "annual-sports-reporting-perf"
+}
+
+jwt_secret         = "replace-with-strong-secret"
+email_provider     = "gmail"
+gmail_user         = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from         = "no-reply@your-domain.com"

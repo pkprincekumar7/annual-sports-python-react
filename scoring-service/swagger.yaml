@@ -1,0 +1,76 @@
+openapi: 3.0.3
+info:
+  title: Scoring Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8007
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /scorings/points-table/{sport}:
+    get:
+      summary: Get points table
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+        - in: query
+          name: gender
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Points table
+          content:
+            application/json:
+              schema:
+                type: object
+  /scorings/points-table/backfill/{sport}:
+    post:
+      summary: Backfill points table
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Backfill complete
+          content:
+            application/json:
+              schema:
+                type: object
+  /scorings/internal/points-table/update:
+    post:
+      summary: Internal points table update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Points table updated
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

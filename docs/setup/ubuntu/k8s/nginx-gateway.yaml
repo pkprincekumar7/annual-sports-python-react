@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: annual-sports-nginx
+  namespace: annual-sports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: annual-sports-nginx
+  template:
+    metadata:
+      labels:
+        app: annual-sports-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: annual-sports-nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: annual-sports-nginx
+  namespace: annual-sports
+spec:
+  selector:
+    app: annual-sports-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: Scheduling Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8006
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /schedulings/event-schedule/{sport}:
+    get:
+      summary: Get event schedule by sport
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+        - in: query
+          name: gender
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event schedule
+          content:
+            application/json:
+              schema:
+                type: object
+  /schedulings/event-schedule/{sport}/teams-players:
+    get:
+      summary: Get teams and players for a sport
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+        - in: query
+          name: gender
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teams and players
+          content:
+            application/json:
+              schema:
+                type: object
+  /schedulings/event-schedule:
+    post:
+      summary: Create event schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                type: object
+  /schedulings/event-schedule/{match_id}:
+    put:
+      summary: Update event schedule match
+      parameters:
+        - in: path
+          name: match_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Schedule updated
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      summary: Delete event schedule match
+      parameters:
+        - in: path
+          name: match_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Schedule deleted
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,418 @@
+openapi: 3.0.3
+info:
+  title: Sports Participation Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8004
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /sports-participations/sports:
+    get:
+      summary: List sports
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sports list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SportsResponse"
+    post:
+      summary: Create sport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SportRequest"
+      responses:
+        "201":
+          description: Sport created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SportResponse"
+  /sports-participations/sports/{id}:
+    put:
+      summary: Update sport
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SportRequest"
+      responses:
+        "200":
+          description: Sport updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SportResponse"
+    delete:
+      summary: Delete sport
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sport deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/sports-counts:
+    get:
+      summary: Sports counts
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sports counts
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/add-captain:
+    post:
+      summary: Add captain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Captain added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/remove-captain:
+    delete:
+      summary: Remove captain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Captain removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/captains-by-sport:
+    get:
+      summary: Captains by sport
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Captains list
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/add-coordinator:
+    post:
+      summary: Add coordinator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Coordinator added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/remove-coordinator:
+    delete:
+      summary: Remove coordinator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Coordinator removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/coordinators-by-sport:
+    get:
+      summary: Coordinators by sport
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Coordinators list
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/teams/{sport}:
+    get:
+      summary: Teams by sport
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teams list
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/participants/{sport}:
+    get:
+      summary: Participants by sport
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Participants list
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/participants-count/{sport}:
+    get:
+      summary: Participants count by sport
+      parameters:
+        - in: path
+          name: sport
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Participants count
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/player-enrollments/{reg_number}:
+    get:
+      summary: Player enrollments
+      parameters:
+        - in: path
+          name: reg_number
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player enrollments
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/validate-participations:
+    post:
+      summary: Validate participations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/update-team-participation:
+    post:
+      summary: Update team participation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Team participation updated
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/update-team-player:
+    post:
+      summary: Update team player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Team player updated
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/delete-team:
+    delete:
+      summary: Delete team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Team deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /sports-participations/update-participation:
+    post:
+      summary: Update participation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Participation updated
+          content:
+            application/json:
+              schema:
+                type: object
+  /sports-participations/remove-participation:
+    delete:
+      summary: Remove participation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Participation removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SportRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        event_id:
+          type: string
+        type:
+          type: string
+        category:
+          type: string
+        team_size:
+          type: integer
+    Sport:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        category:
+          type: string
+    SportResponse:
+      type: object
+      properties:
+        sport:
+          $ref: "#/components/schemas/Sport"
+        message:
+          type: string
+    SportsResponse:
+      type: object
+      properties:
+        sports:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sport"
+        message:
+          type: string
+    SuccessMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string

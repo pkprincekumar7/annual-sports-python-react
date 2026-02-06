@@ -1,0 +1,61 @@
+{
+  "family": "${NAME_PREFIX}-identity-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "${EXECUTION_ROLE_ARN}",
+  "taskRoleArn": "${TASK_ROLE_ARN}",
+  "containerDefinitions": [
+    {
+      "name": "identity-service",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${NAME_PREFIX}-identity-service:${IMAGE_TAG}",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8001, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "APP_ENV", "value": "development" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "JWT_EXPIRES_IN", "value": "24h" },
+        { "name": "ADMIN_REG_NUMBER", "value": "admin" },
+        { "name": "IDENTITY_URL", "value": "http://identity-service.${SERVICE_NAMESPACE}:8001" },
+        { "name": "ENROLLMENT_URL", "value": "http://enrollment-service.${SERVICE_NAMESPACE}:8002" },
+        { "name": "DEPARTMENT_URL", "value": "http://department-service.${SERVICE_NAMESPACE}:8003" },
+        { "name": "SPORTS_PARTICIPATION_URL", "value": "http://sports-participation-service.${SERVICE_NAMESPACE}:8004" },
+        { "name": "EVENT_CONFIGURATION_URL", "value": "http://event-configuration-service.${SERVICE_NAMESPACE}:8005" },
+        { "name": "SCHEDULING_URL", "value": "http://scheduling-service.${SERVICE_NAMESPACE}:8006" },
+        { "name": "SCORING_URL", "value": "http://scoring-service.${SERVICE_NAMESPACE}:8007" },
+        { "name": "REPORTING_URL", "value": "http://reporting-service.${SERVICE_NAMESPACE}:8008" },
+        { "name": "EMAIL_PROVIDER", "value": "gmail" },
+        { "name": "GMAIL_USER", "value": "your-email@gmail.com" },
+        { "name": "SENDGRID_USER", "value": "" },
+        { "name": "SMTP_HOST", "value": "" },
+        { "name": "SMTP_USER", "value": "" },
+        { "name": "SMTP_PORT", "value": "587" },
+        { "name": "SMTP_SECURE", "value": "false" },
+        { "name": "EMAIL_FROM", "value": "no-reply@your-domain.com" },
+        { "name": "EMAIL_FROM_NAME", "value": "Sports Event Management" },
+        { "name": "APP_NAME", "value": "Sports Event Management System" },
+        { "name": "DATABASE_NAME", "value": "${NAME_PREFIX}-identity" },
+        { "name": "REDIS_URL", "value": "redis://${REDIS_ENDPOINT}:6379/0" }
+      ],
+      "secrets": [
+        { "name": "JWT_SECRET", "valueFrom": "${JWT_SECRET_ARN}" },
+        { "name": "MONGODB_URI", "valueFrom": "${MONGO_URI_SECRET_ARN}" },
+        { "name": "GMAIL_APP_PASSWORD", "valueFrom": "${GMAIL_APP_PASSWORD_ARN}" },
+        { "name": "SENDGRID_API_KEY", "valueFrom": "${SENDGRID_API_KEY_ARN}" },
+        { "name": "RESEND_API_KEY", "valueFrom": "${RESEND_API_KEY_ARN}" },
+        { "name": "SMTP_PASSWORD", "valueFrom": "${SMTP_PASSWORD_ARN}" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/${NAME_PREFIX}/identity-service",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+# Example values for prod (GKE)
+project_id              = "my-gcp-project"
+region                  = "us-central1"
+zones                   = ["us-central1-a", "us-central1-b"]
+cluster_name            = "annual-sports-prod-gke"
+network_name            = "annual-sports-prod-vpc"
+subnet_name             = "annual-sports-prod-subnet"
+subnet_cidr             = "10.34.0.0/16"
+artifact_registry_name  = "annual-sports-prod"
+dns_zone_name           = "your-domain.com"
+dns_zone_resource_name  = "learning-dev-zone"
+use_existing_dns_zone   = false
+dns_zone_project        = ""
+domain                  = "sports.your-domain.com"
+api_domain              = "sports-api.your-domain.com"
+image_tag               = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-prod"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-prod"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-prod"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-prod"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-prod"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-prod"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-prod"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-prod"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-prod"
+  "enrollment-service"           = "annual-sports-enrollment-prod"
+  "department-service"           = "annual-sports-department-prod"
+  "sports-participation-service" = "annual-sports-participation-prod"
+  "event-configuration-service"  = "annual-sports-event-config-prod"
+  "scheduling-service"           = "annual-sports-scheduling-prod"
+  "scoring-service"              = "annual-sports-scoring-prod"
+  "reporting-service"            = "annual-sports-reporting-prod"
+}
+
+jwt_secret         = "replace-with-strong-secret"
+email_provider     = "gmail"
+gmail_user         = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from         = "no-reply@your-domain.com"

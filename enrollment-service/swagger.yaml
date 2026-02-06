@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: Enrollment Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8002
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /enrollments/batches:
+    get:
+      summary: List batches
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Batch list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchesResponse"
+  /enrollments/add-batch:
+    post:
+      summary: Create batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchUpsertRequest"
+      responses:
+        "201":
+          description: Batch created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResponse"
+  /enrollments/remove-batch:
+    delete:
+      summary: Delete batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchUpsertRequest"
+      responses:
+        "200":
+          description: Batch removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /enrollments/batches/assign-player:
+    post:
+      summary: Assign player to batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchPlayerRequest"
+      responses:
+        "200":
+          description: Player assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /enrollments/batches/unassign-player:
+    post:
+      summary: Unassign player from batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchPlayerRequest"
+      responses:
+        "200":
+          description: Player unassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /enrollments/batches/unassign-players:
+    post:
+      summary: Unassign players from batches
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Players unassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    BatchUpsertRequest:
+      type: object
+      required: [name, event_id]
+      properties:
+        name:
+          type: string
+        event_id:
+          type: string
+    BatchPlayerRequest:
+      type: object
+      required: [name, event_id, reg_number]
+      properties:
+        name:
+          type: string
+        event_id:
+          type: string
+        reg_number:
+          type: string
+    Batch:
+      type: object
+      properties:
+        name:
+          type: string
+        event_id:
+          type: string
+        players:
+          type: array
+          items:
+            type: string
+    BatchResponse:
+      type: object
+      properties:
+        batch:
+          $ref: "#/components/schemas/Batch"
+        message:
+          type: string
+    BatchesResponse:
+      type: object
+      properties:
+        batches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Batch"
+        message:
+          type: string
+    SuccessMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string

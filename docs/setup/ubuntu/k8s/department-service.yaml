@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: department-service
+  namespace: annual-sports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: department-service
+  template:
+    metadata:
+      labels:
+        app: department-service
+    spec:
+      containers:
+        - name: department-service
+          image: your-registry/annual-sports-department-service:latest
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: annual-sports-config
+            - secretRef:
+                name: annual-sports-secrets
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: annual-sports-secrets
+                  key: MONGODB_URI
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: DEPARTMENT_DATABASE_NAME
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: DEPARTMENT_REDIS_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: department-service
+  namespace: annual-sports
+spec:
+  selector:
+    app: department-service
+  ports:
+    - name: http
+      port: 8003
+      targetPort: 8003

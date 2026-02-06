@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-service
+  namespace: annual-sports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: identity-service
+  template:
+    metadata:
+      labels:
+        app: identity-service
+    spec:
+      containers:
+        - name: identity-service
+          image: your-registry/annual-sports-identity-service:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: annual-sports-config
+            - secretRef:
+                name: annual-sports-secrets
+            - secretRef:
+                name: identity-secrets
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: annual-sports-secrets
+                  key: MONGODB_URI
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: IDENTITY_DATABASE_NAME
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: IDENTITY_REDIS_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-service
+  namespace: annual-sports
+spec:
+  selector:
+    app: identity-service
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001

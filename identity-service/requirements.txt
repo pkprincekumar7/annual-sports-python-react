@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pymongo
+pyjwt
+httpx
+motor
+pydantic-settings
+structlog
+aiosmtplib
+redis

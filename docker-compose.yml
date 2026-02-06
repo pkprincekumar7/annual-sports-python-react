@@ -1,0 +1,176 @@
+x-common-env: &common_env
+  APP_ENV: development
+  LOG_LEVEL: INFO
+  ADMIN_REG_NUMBER: admin
+  JWT_EXPIRES_IN: 24h
+  IDENTITY_URL: http://identity-service:8001
+  ENROLLMENT_URL: http://enrollment-service:8002
+  DEPARTMENT_URL: http://department-service:8003
+  SPORTS_PARTICIPATION_URL: http://sports-participation-service:8004
+  EVENT_CONFIGURATION_URL: http://event-configuration-service:8005
+  SCHEDULING_URL: http://scheduling-service:8006
+  SCORING_URL: http://scoring-service:8007
+  REPORTING_URL: http://reporting-service:8008
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./identity-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-identity
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  enrollment-service:
+    build:
+      context: ./enrollment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./enrollment-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-enrollment
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  department-service:
+    build:
+      context: ./department-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./department-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-department
+      REDIS_URL: redis://redis:6379/2
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  sports-participation-service:
+    build:
+      context: ./sports-participation-service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./sports-participation-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-participation
+      REDIS_URL: redis://redis:6379/3
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  event-configuration-service:
+    build:
+      context: ./event-configuration-service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./event-configuration-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-event-config
+      REDIS_URL: redis://redis:6379/4
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  scheduling-service:
+    build:
+      context: ./scheduling-service
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8006"
+    env_file:
+      - ./scheduling-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-scheduling
+      REDIS_URL: redis://redis:6379/5
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  scoring-service:
+    build:
+      context: ./scoring-service
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8007"
+    env_file:
+      - ./scoring-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-scoring
+      REDIS_URL: redis://redis:6379/6
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  reporting-service:
+    build:
+      context: ./reporting-service
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8008"
+    env_file:
+      - ./reporting-service/.env
+    environment:
+      <<: *common_env
+      DATABASE_NAME: annual-sports-reporting
+      REDIS_URL: redis://redis:6379/7
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - identity-service
+      - enrollment-service
+      - department-service
+      - sports-participation-service
+      - event-configuration-service
+      - scheduling-service
+      - scoring-service
+      - reporting-service
+    restart: unless-stopped

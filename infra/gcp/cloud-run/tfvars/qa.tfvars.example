@@ -1,0 +1,39 @@
+# Example values for qa (Cloud Run)
+project_id              = "my-gcp-project"
+region                  = "us-central1"
+artifact_registry_name  = "annual-sports-qa"
+dns_zone_name           = "your-domain.com"
+dns_zone_resource_name  = "learning-dev-zone"
+use_existing_dns_zone   = false
+dns_zone_project        = ""
+domain                  = "sports-qa.your-domain.com"
+api_domain              = "sports-qa-api.your-domain.com"
+image_tag               = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-qa"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-qa"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-qa"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-qa"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-qa"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-qa"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-qa"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-qa"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-qa"
+  "enrollment-service"           = "annual-sports-enrollment-qa"
+  "department-service"           = "annual-sports-department-qa"
+  "sports-participation-service" = "annual-sports-participation-qa"
+  "event-configuration-service"  = "annual-sports-event-config-qa"
+  "scheduling-service"           = "annual-sports-scheduling-qa"
+  "scoring-service"              = "annual-sports-scoring-qa"
+  "reporting-service"            = "annual-sports-reporting-qa"
+}
+
+jwt_secret         = "replace-with-strong-secret"
+email_provider     = "gmail"
+gmail_user         = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from         = "no-reply@your-domain.com"

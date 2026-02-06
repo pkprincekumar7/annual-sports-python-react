@@ -1,0 +1,45 @@
+# Example values for prod (AKS)
+subscription_id     = "00000000-0000-0000-0000-000000000000"
+tenant_id           = "00000000-0000-0000-0000-000000000000"
+location            = "eastus"
+resource_group_name = "annual-sports-prod-rg"
+dns_zone_name       = "your-domain.com"
+use_existing_dns_zone = false
+dns_zone_resource_group = "dns-rg"
+aks_name            = "annual-sports-prod-aks"
+acr_name            = "annualsportsprodacr"
+domain              = "sports.your-domain.com"
+api_domain          = "sports-api.your-domain.com"
+
+vnet_cidr       = "10.64.0.0/16"
+aks_subnet_cidr = "10.64.1.0/24"
+
+image_tag = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-prod"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-prod"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-prod"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-prod"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-prod"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-prod"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-prod"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-prod"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-prod"
+  "enrollment-service"           = "annual-sports-enrollment-prod"
+  "department-service"           = "annual-sports-department-prod"
+  "sports-participation-service" = "annual-sports-participation-prod"
+  "event-configuration-service"  = "annual-sports-event-config-prod"
+  "scheduling-service"           = "annual-sports-scheduling-prod"
+  "scoring-service"              = "annual-sports-scoring-prod"
+  "reporting-service"            = "annual-sports-reporting-prod"
+}
+
+jwt_secret          = "replace-with-strong-secret"
+email_provider      = "gmail"
+gmail_user          = "your-email@gmail.com"
+gmail_app_password  = "your-app-password"
+email_from          = "no-reply@your-domain.com"

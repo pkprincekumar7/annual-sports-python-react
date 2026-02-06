@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: Event Configuration Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8005
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /event-configurations/event-years:
+    get:
+      summary: List event years
+      responses:
+        "200":
+          description: Event years list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventYearsResponse"
+    post:
+      summary: Create event year
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventYearRequest"
+      responses:
+        "201":
+          description: Event year created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventYearResponse"
+  /event-configurations/event-years/active:
+    get:
+      summary: Get active event year
+      responses:
+        "200":
+          description: Active event year
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventYearResponse"
+  /event-configurations/event-years/{event_id}:
+    put:
+      summary: Update event year
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventYearRequest"
+      responses:
+        "200":
+          description: Event year updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventYearResponse"
+    delete:
+      summary: Delete event year
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event year deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EventYearDates:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+    EventYear:
+      type: object
+      properties:
+        event_id:
+          type: string
+        event_year:
+          type: integer
+        event_name:
+          type: string
+        event_dates:
+          $ref: "#/components/schemas/EventYearDates"
+        registration_dates:
+          $ref: "#/components/schemas/EventYearDates"
+    EventYearRequest:
+      type: object
+      properties:
+        event_year:
+          type: integer
+        event_name:
+          type: string
+        event_dates:
+          $ref: "#/components/schemas/EventYearDates"
+        registration_dates:
+          $ref: "#/components/schemas/EventYearDates"
+    EventYearResponse:
+      type: object
+      properties:
+        eventYear:
+          $ref: "#/components/schemas/EventYear"
+        message:
+          type: string
+    EventYearsResponse:
+      type: object
+      properties:
+        eventYears:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventYear"
+        message:
+          type: string
+    SuccessMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string

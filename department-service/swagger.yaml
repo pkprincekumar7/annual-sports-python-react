@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Department Service API
+  version: 1.0.0
+  description: API documentation for department management.
+servers:
+  - url: http://localhost:8003
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /departments:
+    get:
+      summary: List departments
+      description: Returns all departments with player counts when authenticated.
+      responses:
+        "200":
+          description: Department list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentListResponse"
+    post:
+      summary: Create department
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentCreateRequest"
+      responses:
+        "201":
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentResponse"
+  /departments/{department_id}:
+    put:
+      summary: Update department display order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: department_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentUpdateRequest"
+      responses:
+        "200":
+          description: Department updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentResponse"
+    delete:
+      summary: Delete department
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: department_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Department deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiMessage:
+      type: object
+      properties:
+        message:
+          type: string
+    Department:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        display_order:
+          type: integer
+        createdBy:
+          type: string
+          nullable: true
+        updatedBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        player_count:
+          type: integer
+          nullable: true
+    DepartmentCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        display_order:
+          type: integer
+    DepartmentUpdateRequest:
+      type: object
+      properties:
+        display_order:
+          type: integer
+    DepartmentResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Department"
+        message:
+          type: string
+    DepartmentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Department"
+        message:
+          type: string

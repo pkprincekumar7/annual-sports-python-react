@@ -1,0 +1,44 @@
+# Example values for stg (GKE)
+project_id              = "my-gcp-project"
+region                  = "us-central1"
+zones                   = ["us-central1-a", "us-central1-b"]
+cluster_name            = "annual-sports-stg-gke"
+network_name            = "annual-sports-stg-vpc"
+subnet_name             = "annual-sports-stg-subnet"
+subnet_cidr             = "10.32.0.0/16"
+artifact_registry_name  = "annual-sports-stg"
+dns_zone_name           = "your-domain.com"
+dns_zone_resource_name  = "learning-dev-zone"
+use_existing_dns_zone   = false
+dns_zone_project        = ""
+domain                  = "sports-stg.your-domain.com"
+api_domain              = "sports-stg-api.your-domain.com"
+image_tag               = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-stg"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-stg"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-stg"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-stg"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-stg"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-stg"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-stg"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-stg"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-stg"
+  "enrollment-service"           = "annual-sports-enrollment-stg"
+  "department-service"           = "annual-sports-department-stg"
+  "sports-participation-service" = "annual-sports-participation-stg"
+  "event-configuration-service"  = "annual-sports-event-config-stg"
+  "scheduling-service"           = "annual-sports-scheduling-stg"
+  "scoring-service"              = "annual-sports-scoring-stg"
+  "reporting-service"            = "annual-sports-reporting-stg"
+}
+
+jwt_secret         = "replace-with-strong-secret"
+email_provider     = "gmail"
+gmail_user         = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from         = "no-reply@your-domain.com"

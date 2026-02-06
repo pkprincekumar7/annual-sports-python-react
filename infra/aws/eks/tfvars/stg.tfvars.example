@@ -1,0 +1,34 @@
+# Example values for stg
+aws_region      = "us-east-1"
+aws_account_id  = "123456789012"
+cluster_name    = "annual-sports-stg"
+vpc_cidr        = "10.30.0.0/16"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets      = ["10.30.1.0/24", "10.30.2.0/24"]
+private_subnets     = ["10.30.11.0/24", "10.30.12.0/24"]
+
+domain     = "sports-stg.your-domain.com"
+api_domain = "sports-stg-api.your-domain.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+
+image_tag = "latest"
+
+mongo_uri = "mongodb+srv://user:pass@cluster"
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-stg"
+  "enrollment-service"           = "annual-sports-enrollment-stg"
+  "department-service"           = "annual-sports-department-stg"
+  "sports-participation-service" = "annual-sports-participation-stg"
+  "event-configuration-service"  = "annual-sports-event-config-stg"
+  "scheduling-service"           = "annual-sports-scheduling-stg"
+  "scoring-service"              = "annual-sports-scoring-stg"
+  "reporting-service"            = "annual-sports-reporting-stg"
+}
+
+jwt_secret = "replace-with-strong-secret"
+email_provider = "gmail"
+gmail_user = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from = "no-reply@your-domain.com"

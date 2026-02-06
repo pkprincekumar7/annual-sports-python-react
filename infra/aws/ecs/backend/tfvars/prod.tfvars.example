@@ -1,0 +1,39 @@
+# Example values for prod
+aws_region     = "us-east-1"
+aws_account_id = "123456789012"
+cluster_name   = "annual-sports-prod"
+vpc_cidr       = "10.50.0.0/16"
+name_prefix    = "as-prod"
+service_discovery_namespace = "annual-sports.prod.local"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets      = ["10.50.1.0/24", "10.50.2.0/24"]
+private_subnets     = ["10.50.11.0/24", "10.50.12.0/24"]
+
+api_domain = "sports-api.your-domain.com"
+route53_zone_id = "Z1234567890"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+
+image_tag = "latest"
+
+mongo_uri_secret_name = "as-prod-mongo-uri"
+
+database_names = {
+  "identity-service"             = "as-prod-identity"
+  "enrollment-service"           = "as-prod-enrollment"
+  "department-service"           = "as-prod-department"
+  "sports-participation-service" = "as-prod-sports-part"
+  "event-configuration-service"  = "as-prod-event-config"
+  "scheduling-service"           = "as-prod-scheduling"
+  "scoring-service"              = "as-prod-scoring"
+  "reporting-service"            = "as-prod-reporting"
+}
+
+jwt_secret_name = "as-prod-jwt"
+email_provider = "gmail"
+gmail_user = "your-email@gmail.com"
+gmail_app_password_secret_name = "as-prod-gmail-app-password"
+sendgrid_api_key_secret_name = "as-prod-sendgrid-api-key"
+resend_api_key_secret_name = "as-prod-resend-api-key"
+smtp_password_secret_name = "as-prod-smtp-password"
+email_from = "no-reply@your-domain.com"

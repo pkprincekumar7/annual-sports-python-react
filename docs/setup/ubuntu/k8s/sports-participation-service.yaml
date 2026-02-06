@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sports-participation-service
+  namespace: annual-sports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sports-participation-service
+  template:
+    metadata:
+      labels:
+        app: sports-participation-service
+    spec:
+      containers:
+        - name: sports-participation-service
+          image: your-registry/annual-sports-sports-participation-service:latest
+          ports:
+            - containerPort: 8004
+          envFrom:
+            - configMapRef:
+                name: annual-sports-config
+            - secretRef:
+                name: annual-sports-secrets
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: annual-sports-secrets
+                  key: MONGODB_URI
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: SPORTS_PARTICIPATION_DATABASE_NAME
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: SPORTS_PARTICIPATION_REDIS_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sports-participation-service
+  namespace: annual-sports
+spec:
+  selector:
+    app: sports-participation-service
+  ports:
+    - name: http
+      port: 8004
+      targetPort: 8004

@@ -1,0 +1,34 @@
+# Example values for qa
+aws_region      = "us-east-1"
+aws_account_id  = "123456789012"
+cluster_name    = "annual-sports-qa"
+vpc_cidr        = "10.20.0.0/16"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets      = ["10.20.1.0/24", "10.20.2.0/24"]
+private_subnets     = ["10.20.11.0/24", "10.20.12.0/24"]
+
+domain     = "sports-qa.your-domain.com"
+api_domain = "sports-qa-api.your-domain.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+
+image_tag = "latest"
+
+mongo_uri = "mongodb+srv://user:pass@cluster"
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-qa"
+  "enrollment-service"           = "annual-sports-enrollment-qa"
+  "department-service"           = "annual-sports-department-qa"
+  "sports-participation-service" = "annual-sports-participation-qa"
+  "event-configuration-service"  = "annual-sports-event-config-qa"
+  "scheduling-service"           = "annual-sports-scheduling-qa"
+  "scoring-service"              = "annual-sports-scoring-qa"
+  "reporting-service"            = "annual-sports-reporting-qa"
+}
+
+jwt_secret = "replace-with-strong-secret"
+email_provider = "gmail"
+gmail_user = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from = "no-reply@your-domain.com"

@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: annual-sports-ingress
+  namespace: annual-sports
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: annual-sports-frontend
+                port:
+                  number: 80
+          - path: /identities
+            pathType: Prefix
+            backend:
+              service:
+                name: identity-service
+                port:
+                  number: 8001
+          - path: /enrollments
+            pathType: Prefix
+            backend:
+              service:
+                name: enrollment-service
+                port:
+                  number: 8002
+          - path: /departments
+            pathType: Prefix
+            backend:
+              service:
+                name: department-service
+                port:
+                  number: 8003
+          - path: /sports-participations
+            pathType: Prefix
+            backend:
+              service:
+                name: sports-participation-service
+                port:
+                  number: 8004
+          - path: /event-configurations
+            pathType: Prefix
+            backend:
+              service:
+                name: event-configuration-service
+                port:
+                  number: 8005
+          - path: /schedulings
+            pathType: Prefix
+            backend:
+              service:
+                name: scheduling-service
+                port:
+                  number: 8006
+          - path: /scorings
+            pathType: Prefix
+            backend:
+              service:
+                name: scoring-service
+                port:
+                  number: 8007
+          - path: /reportings
+            pathType: Prefix
+            backend:
+              service:
+                name: reporting-service
+                port:
+                  number: 8008

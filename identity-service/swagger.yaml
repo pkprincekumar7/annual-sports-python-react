@@ -1,0 +1,292 @@
+openapi: 3.0.3
+info:
+  title: Identity Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8001
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /identities/login:
+    post:
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /identities/change-password:
+    post:
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /identities/reset-password:
+    post:
+      summary: Reset password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "200":
+          description: Reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /identities/me:
+    get:
+      summary: Get current user
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+  /identities/players:
+    get:
+      summary: List players
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Players list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayersResponse"
+  /identities/save-player:
+    post:
+      summary: Create player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerUpsertRequest"
+      responses:
+        "201":
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+  /identities/update-player:
+    put:
+      summary: Update player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerUpsertRequest"
+      responses:
+        "200":
+          description: Player updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+  /identities/delete-player/{reg_number}:
+    delete:
+      summary: Delete player
+      parameters:
+        - in: path
+          name: reg_number
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessageResponse"
+  /identities/bulk-player-enrollments:
+    post:
+      summary: Bulk player enrollments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Enrollments processed
+          content:
+            application/json:
+              schema:
+                type: object
+  /identities/bulk-delete-players:
+    post:
+      summary: Bulk delete players
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Players deleted
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required: [reg_number, password]
+      properties:
+        reg_number:
+          type: string
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+    ResetPasswordRequest:
+      type: object
+      required: [reg_number, email_id]
+      properties:
+        reg_number:
+          type: string
+        email_id:
+          type: string
+    PlayerUpsertRequest:
+      type: object
+      properties:
+        reg_number:
+          type: string
+        full_name:
+          type: string
+        email_id:
+          type: string
+        department:
+          type: string
+        batch:
+          type: string
+        gender:
+          type: string
+        event_id:
+          type: string
+    Player:
+      type: object
+      properties:
+        reg_number:
+          type: string
+        full_name:
+          type: string
+        email_id:
+          type: string
+        department:
+          type: string
+        batch:
+          type: string
+        gender:
+          type: string
+        participated_in:
+          type: array
+          items:
+            type: string
+        captain_in:
+          type: array
+          items:
+            type: string
+        coordinator_in:
+          type: array
+          items:
+            type: string
+        batch_name:
+          type: string
+          nullable: true
+    PlayerResponse:
+      type: object
+      properties:
+        player:
+          $ref: "#/components/schemas/Player"
+        message:
+          type: string
+    PlayersResponse:
+      type: object
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        message:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        player:
+          $ref: "#/components/schemas/Player"
+        change_password_required:
+          type: boolean
+        message:
+          type: string
+    SuccessMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string

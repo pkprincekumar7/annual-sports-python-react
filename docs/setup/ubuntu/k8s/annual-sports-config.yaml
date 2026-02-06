@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: annual-sports-config
+  namespace: annual-sports
+data:
+  APP_ENV: "development"
+  LOG_LEVEL: "INFO"
+  JWT_EXPIRES_IN: "24h"
+  ADMIN_REG_NUMBER: "admin"
+  VITE_API_URL: "/"
+
+  IDENTITY_URL: "http://identity-service:8001"
+  ENROLLMENT_URL: "http://enrollment-service:8002"
+  DEPARTMENT_URL: "http://department-service:8003"
+  SPORTS_PARTICIPATION_URL: "http://sports-participation-service:8004"
+  EVENT_CONFIGURATION_URL: "http://event-configuration-service:8005"
+  SCHEDULING_URL: "http://scheduling-service:8006"
+  SCORING_URL: "http://scoring-service:8007"
+  REPORTING_URL: "http://reporting-service:8008"
+
+  # Keep the DB name out of MONGODB_URI; services select the DB via DATABASE_NAME.
+  IDENTITY_DATABASE_NAME: "annual-sports-identity"
+  ENROLLMENT_DATABASE_NAME: "annual-sports-enrollment"
+  DEPARTMENT_DATABASE_NAME: "annual-sports-department"
+  SPORTS_PARTICIPATION_DATABASE_NAME: "annual-sports-participation"
+  EVENT_CONFIGURATION_DATABASE_NAME: "annual-sports-event-config"
+  SCHEDULING_DATABASE_NAME: "annual-sports-scheduling"
+  SCORING_DATABASE_NAME: "annual-sports-scoring"
+  REPORTING_DATABASE_NAME: "annual-sports-reporting"
+
+  IDENTITY_REDIS_URL: "redis://redis:6379/0"
+  ENROLLMENT_REDIS_URL: "redis://redis:6379/1"
+  DEPARTMENT_REDIS_URL: "redis://redis:6379/2"
+  SPORTS_PARTICIPATION_REDIS_URL: "redis://redis:6379/3"
+  EVENT_CONFIGURATION_REDIS_URL: "redis://redis:6379/4"
+  SCHEDULING_REDIS_URL: "redis://redis:6379/5"
+  SCORING_REDIS_URL: "redis://redis:6379/6"
+  REPORTING_REDIS_URL: "redis://redis:6379/7"
+
+  EMAIL_PROVIDER: "gmail"
+  GMAIL_USER: "your-email@gmail.com"
+  SENDGRID_USER: ""
+  SMTP_HOST: ""
+  SMTP_USER: ""
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  EMAIL_FROM: "no-reply@your-domain.com"
+  EMAIL_FROM_NAME: "Sports Event Management"
+  APP_NAME: "Sports Event Management System"

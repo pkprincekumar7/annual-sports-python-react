@@ -1,0 +1,32 @@
+openapi: 3.0.3
+info:
+  title: Reporting Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8008
+  - url: http://localhost:5173
+security:
+  - bearerAuth: []
+paths:
+  /reportings/export-excel:
+    get:
+      summary: Export Excel report
+      parameters:
+        - in: query
+          name: event_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

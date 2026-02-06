@@ -1,0 +1,39 @@
+# Example values for dev (Cloud Run)
+project_id              = "my-gcp-project"
+region                  = "us-central1"
+artifact_registry_name  = "annual-sports-dev"
+dns_zone_name           = "your-domain.com"
+dns_zone_resource_name  = "learning-dev-zone"
+use_existing_dns_zone   = false
+dns_zone_project        = ""
+domain                  = "sports-dev.your-domain.com"
+api_domain              = "sports-dev-api.your-domain.com"
+image_tag               = "latest"
+
+mongo_uris = {
+  "identity-service"             = "mongodb+srv://user:pass@cluster/annual-sports-identity-dev"
+  "enrollment-service"           = "mongodb+srv://user:pass@cluster/annual-sports-enrollment-dev"
+  "department-service"           = "mongodb+srv://user:pass@cluster/annual-sports-department-dev"
+  "sports-participation-service" = "mongodb+srv://user:pass@cluster/annual-sports-participation-dev"
+  "event-configuration-service"  = "mongodb+srv://user:pass@cluster/annual-sports-event-config-dev"
+  "scheduling-service"           = "mongodb+srv://user:pass@cluster/annual-sports-scheduling-dev"
+  "scoring-service"              = "mongodb+srv://user:pass@cluster/annual-sports-scoring-dev"
+  "reporting-service"            = "mongodb+srv://user:pass@cluster/annual-sports-reporting-dev"
+}
+
+database_names = {
+  "identity-service"             = "annual-sports-identity-dev"
+  "enrollment-service"           = "annual-sports-enrollment-dev"
+  "department-service"           = "annual-sports-department-dev"
+  "sports-participation-service" = "annual-sports-participation-dev"
+  "event-configuration-service"  = "annual-sports-event-config-dev"
+  "scheduling-service"           = "annual-sports-scheduling-dev"
+  "scoring-service"              = "annual-sports-scoring-dev"
+  "reporting-service"            = "annual-sports-reporting-dev"
+}
+
+jwt_secret         = "replace-with-strong-secret"
+email_provider     = "gmail"
+gmail_user         = "your-email@gmail.com"
+gmail_app_password = "your-app-password"
+email_from         = "no-reply@your-domain.com"

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduling-service
+  namespace: annual-sports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduling-service
+  template:
+    metadata:
+      labels:
+        app: scheduling-service
+    spec:
+      containers:
+        - name: scheduling-service
+          image: your-registry/annual-sports-scheduling-service:latest
+          ports:
+            - containerPort: 8006
+          envFrom:
+            - configMapRef:
+                name: annual-sports-config
+            - secretRef:
+                name: annual-sports-secrets
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: annual-sports-secrets
+                  key: MONGODB_URI
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: SCHEDULING_DATABASE_NAME
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: annual-sports-config
+                  key: SCHEDULING_REDIS_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduling-service
+  namespace: annual-sports
+spec:
+  selector:
+    app: scheduling-service
+  ports:
+    - name: http
+      port: 8006
+      targetPort: 8006

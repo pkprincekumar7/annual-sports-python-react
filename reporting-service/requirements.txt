@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pymongo
+pyjwt
+httpx
+pydantic-settings
+structlog
+openpyxl
+redis
