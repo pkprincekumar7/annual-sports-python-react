@@ -7,40 +7,40 @@
 ## Start Containers
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose up --build
 ```
 
 ## Detached Mode
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose up -d --build
 ```
 
 ## Rebuild Images (No Cache)
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose build --no-cache
 ```
 
 ## Restart / Stop
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose restart
 ```
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose down
 ```
 
 ## Logs
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure
+cd C:\annual-sports-python-react
 docker compose logs -f
 ```
 

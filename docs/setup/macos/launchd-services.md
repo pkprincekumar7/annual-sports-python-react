@@ -7,14 +7,14 @@ This uses launchd to run the frontend preview server and FastAPI services as ser
 Create `frontend/.env` and set `VITE_API_URL` before building:
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure/frontend
+cd ~/projects/annual-sports-python-react/frontend
 printf "VITE_API_URL=/\n" > .env
 ```
 
 ## 2) Build the Frontend
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure/frontend
+cd ~/projects/annual-sports-python-react/frontend
 npm install
 npm run build
 ```
@@ -43,7 +43,7 @@ Use that path in `ProgramArguments` (e.g., `/opt/homebrew/bin/npm` on Apple Sili
       <string>preview</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/YOUR_USER/projects/annual-sports-event-full/new-structure/frontend</string>
+    <string>/Users/YOUR_USER/projects/annual-sports-python-react/frontend</string>
     <key>EnvironmentVariables</key>
     <dict>
       <key>NODE_ENV</key>
@@ -86,7 +86,7 @@ Create one launchd plist per service. Example for Identity:
       <string>8001</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/YOUR_USER/projects/annual-sports-event-full/new-structure/identity-service</string>
+    <string>/Users/YOUR_USER/projects/annual-sports-python-react/identity-service</string>
     <key>EnvironmentVariables</key>
     <dict>
       <key>PYTHONUNBUFFERED</key>

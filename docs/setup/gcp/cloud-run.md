@@ -17,12 +17,12 @@ This guide deploys the app to Cloud Run:
 
 Terraform for Cloud Run lives in:
 
-`new-structure/infra/gcp/cloud-run`
+`infra/gcp/cloud-run`
 
 Quick start:
 
 ```bash
-cd new-structure/infra/gcp/cloud-run
+cd infra/gcp/cloud-run
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars
@@ -63,7 +63,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "annual-sports-${service}:latest" "new-structure/$service"
+  docker build -t "annual-sports-${service}:latest" "$service"
   docker tag "annual-sports-${service}:latest" \
     "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-${service}:latest"
   docker push "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-${service}:latest"
@@ -71,7 +71,7 @@ done
 
 docker build -t annual-sports-frontend:latest \
   --build-arg VITE_API_URL=/ \
-  new-structure/frontend
+  frontend
 docker tag annual-sports-frontend:latest \
   "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-frontend:latest"
 docker push "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-frontend:latest"

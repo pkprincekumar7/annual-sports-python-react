@@ -13,7 +13,7 @@ Terraform.
 ### 1) Initialize Terraform
 
 ```bash
-cd new-structure/infra/aws/ecs/frontend
+cd infra/aws/ecs/frontend
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 ```
@@ -42,13 +42,14 @@ terraform apply -var-file=dev.tfvars
 ### 3) Deploy Frontend Build
 
 ```bash
-cd ../../../../frontend
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT/frontend"
 VITE_API_URL=https://your-api-domain.com npm install
 VITE_API_URL=https://your-api-domain.com npm run build
 cd -
 
 FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)
-aws s3 sync ../../../../frontend/dist "s3://$FRONTEND_BUCKET"
+aws s3 sync "$REPO_ROOT/frontend/dist" "s3://$FRONTEND_BUCKET"
 ```
 
 Invalidate CloudFront cache after upload:

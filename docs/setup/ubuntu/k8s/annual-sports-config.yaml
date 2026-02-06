@@ -20,14 +20,14 @@ data:
   REPORTING_URL: "http://reporting-service:8008"
 
   # Keep the DB name out of MONGODB_URI; services select the DB via DATABASE_NAME.
-  IDENTITY_DATABASE_NAME: "annual-sports-identity"
-  ENROLLMENT_DATABASE_NAME: "annual-sports-enrollment"
-  DEPARTMENT_DATABASE_NAME: "annual-sports-department"
-  SPORTS_PARTICIPATION_DATABASE_NAME: "annual-sports-participation"
-  EVENT_CONFIGURATION_DATABASE_NAME: "annual-sports-event-config"
-  SCHEDULING_DATABASE_NAME: "annual-sports-scheduling"
-  SCORING_DATABASE_NAME: "annual-sports-scoring"
-  REPORTING_DATABASE_NAME: "annual-sports-reporting"
+  IDENTITY_DATABASE_NAME: "as-local-identity"
+  ENROLLMENT_DATABASE_NAME: "as-local-enrollment"
+  DEPARTMENT_DATABASE_NAME: "as-local-department"
+  SPORTS_PARTICIPATION_DATABASE_NAME: "as-local-sports-part"
+  EVENT_CONFIGURATION_DATABASE_NAME: "as-local-event-config"
+  SCHEDULING_DATABASE_NAME: "as-local-scheduling"
+  SCORING_DATABASE_NAME: "as-local-scoring"
+  REPORTING_DATABASE_NAME: "as-local-reporting"
 
   IDENTITY_REDIS_URL: "redis://redis:6379/0"
   ENROLLMENT_REDIS_URL: "redis://redis:6379/1"

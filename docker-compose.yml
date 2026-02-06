@@ -39,7 +39,7 @@ services:
       - ./identity-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-identity
+      DATABASE_NAME: as-local-identity
       REDIS_URL: redis://redis:6379/0
     depends_on:
       - redis
@@ -55,7 +55,7 @@ services:
       - ./enrollment-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-enrollment
+      DATABASE_NAME: as-local-enrollment
       REDIS_URL: redis://redis:6379/1
     depends_on:
       - redis
@@ -71,7 +71,7 @@ services:
       - ./department-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-department
+      DATABASE_NAME: as-local-department
       REDIS_URL: redis://redis:6379/2
     depends_on:
       - redis
@@ -87,7 +87,7 @@ services:
       - ./sports-participation-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-participation
+      DATABASE_NAME: as-local-sports-part
       REDIS_URL: redis://redis:6379/3
     depends_on:
       - redis
@@ -103,7 +103,7 @@ services:
       - ./event-configuration-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-event-config
+      DATABASE_NAME: as-local-event-config
       REDIS_URL: redis://redis:6379/4
     depends_on:
       - redis
@@ -119,7 +119,7 @@ services:
       - ./scheduling-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-scheduling
+      DATABASE_NAME: as-local-scheduling
       REDIS_URL: redis://redis:6379/5
     depends_on:
       - redis
@@ -135,7 +135,7 @@ services:
       - ./scoring-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-scoring
+      DATABASE_NAME: as-local-scoring
       REDIS_URL: redis://redis:6379/6
     depends_on:
       - redis
@@ -151,7 +151,7 @@ services:
       - ./reporting-service/.env
     environment:
       <<: *common_env
-      DATABASE_NAME: annual-sports-reporting
+      DATABASE_NAME: as-local-reporting
       REDIS_URL: redis://redis:6379/7
     depends_on:
       - redis

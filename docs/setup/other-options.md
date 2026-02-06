@@ -24,7 +24,7 @@
 ## Docker (Without Compose)
 1. Build images for services:
    ```bash
-   cd /var/www/annual-sports-event-full/new-structure
+   cd /var/www/annual-sports-python-react
    for service in \
      identity-service \
      enrollment-service \

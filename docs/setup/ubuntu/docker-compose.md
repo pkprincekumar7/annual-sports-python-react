@@ -3,55 +3,55 @@
 Run the full stack using Docker Compose.
 
 ## Prerequisites
-- Docker Engine + Compose installed (`new-structure/docs/setup/ubuntu/docker-engine-install.md`)
+- Docker Engine + Compose installed (`docs/setup/ubuntu/docker-engine-install.md`)
 - `.env` configured for each service (copy from `.env.example`)
 
 ## 1) Start Containers
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose up --build
 ```
 
 ## 2) Run in Background (Detached)
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose up -d --build
 ```
 
 ## 3) Rebuild Images (No Cache)
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose build --no-cache
 ```
 
 ## 4) Restart Containers
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose restart
 ```
 
 ## 5) Rebuild and Restart (One-liner)
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose up -d --build --force-recreate
 ```
 
 ## 6) Stop and Remove
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose down
 ```
 
 ## 7) Follow Logs
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure
+cd /var/www/annual-sports-python-react
 docker compose logs -f
 ```
 

@@ -31,8 +31,8 @@ Change Vite port in `vite.config.js` if needed and rebuild.
 ## Permission Issues
 
 ```bash
-sudo chown -R ubuntu:ubuntu /var/www/annual-sports-event-full
-sudo chmod +x /var/www/annual-sports-event-full
+sudo chown -R ubuntu:ubuntu /var/www/annual-sports-python-react
+sudo chmod +x /var/www/annual-sports-python-react
 ```
 
 ## MongoDB Not Running

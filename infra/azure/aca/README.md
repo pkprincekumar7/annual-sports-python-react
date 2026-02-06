@@ -2,7 +2,7 @@
 
 Terraform for Azure Container Apps is scaffolded here:
 
-`new-structure/infra/azure/aca`
+`infra/azure/aca`
 
 ## Prerequisites
 - Terraform 1.13+
@@ -19,7 +19,7 @@ copying from the matching example file. Update values before `terraform plan`
 and `terraform apply`.
 
 ```bash
-cd new-structure/infra/azure/aca
+cd infra/azure/aca
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars

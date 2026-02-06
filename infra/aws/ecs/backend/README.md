@@ -2,7 +2,7 @@
 
 Terraform for ECS is already scaffolded here:
 
-`new-structure/infra/aws/ecs/backend`
+`infra/aws/ecs/backend`
 
 ## Prerequisites
 - Terraform 1.13+
@@ -36,7 +36,7 @@ Required names:
 ### 2) Initialize Terraform
 
 ```bash
-cd new-structure/infra/aws/ecs/backend
+cd infra/aws/ecs/backend
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 ```
@@ -121,6 +121,7 @@ aws ecr get-login-password --region "$AWS_REGION" \
 Build and push:
 
 ```bash
+REPO_ROOT=$(git rev-parse --show-toplevel)
 for service in \
   identity-service \
   enrollment-service \
@@ -130,7 +131,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "${NAME_PREFIX}-${service}:${IMAGE_TAG}" "../../../../$service"
+  docker build -t "${NAME_PREFIX}-${service}:${IMAGE_TAG}" "$REPO_ROOT/$service"
   docker tag "${NAME_PREFIX}-${service}:${IMAGE_TAG}" \
     "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
   docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
@@ -314,7 +315,7 @@ Available environments:
 - `prod` → `hcl/backend-prod.hcl`, `tfvars/prod.tfvars.example`
 
 ```bash
-cd new-structure/infra/aws/ecs/backend
+cd infra/aws/ecs/backend
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars

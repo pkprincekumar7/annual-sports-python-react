@@ -2,7 +2,7 @@
 
 Terraform for EKS is already scaffolded here:
 
-`new-structure/infra/aws/eks`
+`infra/aws/eks`
 
 ## Prerequisites
 - Terraform 1.13+
@@ -18,7 +18,7 @@ Recommended bucket/table setup:
 - DynamoDB table: partition key `LockID` (string), on-demand billing
 
 ```bash
-cd new-structure/infra/aws/eks
+cd infra/aws/eks
 ```
 
 Verify the environment-specific backend file (for example, `hcl/backend-dev.hcl`)
@@ -50,7 +50,7 @@ Available environments:
 - `prod` → `hcl/backend-prod.hcl`, `tfvars/prod.tfvars.example`
 
 ```bash
-cd new-structure/infra/aws/eks
+cd infra/aws/eks
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars

@@ -16,12 +16,12 @@ This guide deploys the app to Azure Container Apps (ACA):
 
 Terraform for ACA lives in:
 
-`new-structure/infra/azure/aca`
+`infra/azure/aca`
 
 Quick start:
 
 ```bash
-cd new-structure/infra/azure/aca
+cd infra/azure/aca
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars
@@ -57,7 +57,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "annual-sports-${service}:latest" "new-structure/$service"
+  docker build -t "annual-sports-${service}:latest" "$service"
   docker tag "annual-sports-${service}:latest" \
     "$ACR_LOGIN_SERVER/annual-sports-${service}:latest"
   docker push "$ACR_LOGIN_SERVER/annual-sports-${service}:latest"
@@ -65,7 +65,7 @@ done
 
 docker build -t annual-sports-frontend:latest \
   --build-arg VITE_API_URL=/ \
-  new-structure/frontend
+  frontend
 docker tag annual-sports-frontend:latest \
   "$ACR_LOGIN_SERVER/annual-sports-frontend:latest"
 docker push "$ACR_LOGIN_SERVER/annual-sports-frontend:latest"

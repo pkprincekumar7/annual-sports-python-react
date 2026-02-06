@@ -16,8 +16,8 @@ It assumes you already have a domain and can create DNS records.
 
 If you want Terraform to provision everything end-to-end, use the separate stacks:
 
-- Backend: `new-structure/infra/aws/ecs/backend/README.md`
-- Frontend: `new-structure/infra/aws/ecs/frontend/README.md`
+- Backend: `infra/aws/ecs/backend/README.md`
+- Frontend: `infra/aws/ecs/frontend/README.md`
 
 ## Manual Setup (Console or CLI)
 
@@ -116,7 +116,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "${NAME_PREFIX}-${service}:${IMAGE_TAG}" "new-structure/$service"
+  docker build -t "${NAME_PREFIX}-${service}:${IMAGE_TAG}" "$service"
   docker tag "${NAME_PREFIX}-${service}:${IMAGE_TAG}" \
     "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
   docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
@@ -311,7 +311,7 @@ Create a task definition per microservice (Fargate):
 - Port mappings:
   - services: `8001`–`8008`
 - Environment variables per service:
-  - Non-secret values (app settings + service URLs) should match `x-common-env` in `new-structure/docker-compose.yml`.
+  - Non-secret values (app settings + service URLs) should match `x-common-env` in `docker-compose.yml`.
 - `DATABASE_NAME` differs per service (use your `${NAME_PREFIX}-...` names).
   - Secrets should come from AWS Secrets Manager:
     - `JWT_SECRET` from `jwt_secret_arn`
@@ -331,7 +331,7 @@ ECS uses ALB path routing; no NGINX gateway is required.
 
 Task definition templates live in:
 
-`new-structure/docs/setup/aws/task-defs`
+`docs/setup/aws/task-defs`
 
 Register them after Redis is provisioned (so `REDIS_ENDPOINT` is available).
 
@@ -386,7 +386,7 @@ output of `envsubst`, where `${VAR}` placeholders are replaced with actual value
 Use values created in earlier steps and query ARNs as shown below:
 
 ```bash
-cd new-structure/docs/setup/aws
+cd docs/setup/aws
 
 # Reuse AWS_ACCOUNT_ID, AWS_REGION, IMAGE_TAG, CLUSTER_NAME, NAME_PREFIX,
 # and SERVICE_NAMESPACE from Step 3.
@@ -665,12 +665,12 @@ aws ecs create-service \
 ### 14) Host Frontend on S3 + CloudFront
 
 If you prefer Terraform for frontend hosting, use:
-`new-structure/infra/aws/ecs/frontend/README.md`. The steps below are manual.
+`infra/aws/ecs/frontend/README.md`. The steps below are manual.
 
 Build and upload the static frontend:
 
 ```bash
-cd new-structure/frontend
+cd frontend
 VITE_API_URL=https://your-api-domain.com npm install
 VITE_API_URL=https://your-api-domain.com npm run build
 cd -
@@ -688,7 +688,7 @@ if ! aws s3api head-bucket --bucket "$FRONTEND_BUCKET" 2>/dev/null; then
     --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 fi
 
-aws s3 sync new-structure/frontend/dist "s3://$FRONTEND_BUCKET"
+aws s3 sync frontend/dist "s3://$FRONTEND_BUCKET"
 ```
 
 Create an Origin Access Control (OAC) and CloudFront distribution:

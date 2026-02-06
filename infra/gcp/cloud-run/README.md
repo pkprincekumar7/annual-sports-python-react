@@ -2,7 +2,7 @@
 
 Terraform for Cloud Run is scaffolded here:
 
-`new-structure/infra/gcp/cloud-run`
+`infra/gcp/cloud-run`
 
 ## Prerequisites
 - Terraform 1.13+
@@ -19,7 +19,7 @@ copying from the matching example file. Update values before `terraform plan`
 and `terraform apply`.
 
 ```bash
-cd new-structure/infra/gcp/cloud-run
+cd infra/gcp/cloud-run
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars

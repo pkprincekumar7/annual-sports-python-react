@@ -7,40 +7,40 @@
 ## Start Containers
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose up --build
 ```
 
 ## Detached Mode
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose up -d --build
 ```
 
 ## Rebuild Images (No Cache)
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose build --no-cache
 ```
 
 ## Restart / Stop
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose restart
 ```
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose down
 ```
 
 ## Logs
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure
+cd ~/projects/annual-sports-python-react
 docker compose logs -f
 ```
 

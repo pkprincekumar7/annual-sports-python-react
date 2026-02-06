@@ -22,12 +22,12 @@ aws configure
 
 Terraform for EKS lives in:
 
-`new-structure/infra/aws/eks`
+`infra/aws/eks`
 
 Quick start:
 
 ```bash
-cd new-structure/infra/aws/eks
+cd infra/aws/eks
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars
@@ -85,7 +85,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "annual-sports-${service}:${IMAGE_TAG}" "new-structure/$service"
+  docker build -t "annual-sports-${service}:${IMAGE_TAG}" "$service"
   docker tag "annual-sports-${service}:${IMAGE_TAG}" \
     "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-${service}:${IMAGE_TAG}"
   docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-${service}:${IMAGE_TAG}"
@@ -93,7 +93,7 @@ done
 
 docker build -t annual-sports-frontend:${IMAGE_TAG} \
   --build-arg VITE_API_URL=/ \
-  new-structure/frontend
+  frontend
 docker tag annual-sports-frontend:${IMAGE_TAG} \
   "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/annual-sports-frontend:${IMAGE_TAG}"
 
@@ -179,10 +179,10 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 kubectl create namespace "$NAMESPACE"
 ```
 
-Create ConfigMaps for non-secret values and Secrets for sensitive values. Non-secrets should match `x-common-env` in `new-structure/docker-compose.yml`. Secrets (MongoDB URI, JWT secret, email credentials) should come from AWS Secrets Manager or Kubernetes Secrets.
+Create ConfigMaps for non-secret values and Secrets for sensitive values. Non-secrets should match `x-common-env` in `docker-compose.yml`. Secrets (MongoDB URI, JWT secret, email credentials) should come from AWS Secrets Manager or Kubernetes Secrets.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/annual-sports-config.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/annual-sports-config.yaml
 kubectl -n "$NAMESPACE" create secret generic annual-sports-secrets \
   --from-literal=MONGODB_URI="mongodb://mongodb-0.mongodb:27017" \
   --from-literal=JWT_SECRET="your-strong-secret"
@@ -197,36 +197,36 @@ kubectl -n "$NAMESPACE" create secret generic identity-secrets \
 ## 8) Deploy Redis and MongoDB
 
 Redis is required for caching. Use **ElastiCache for Redis** in production and set `REDIS_URL` for each service.
-If you want in-cluster Redis for testing, apply `new-structure/docs/setup/ubuntu/k8s/redis.yaml`.
+If you want in-cluster Redis for testing, apply `docs/setup/ubuntu/k8s/redis.yaml`.
 
 Deploy Redis (required for caching):
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/redis.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/redis.yaml
 ```
 
 MongoDB is optional if you use a managed provider (MongoDB Atlas). For in-cluster MongoDB:
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/mongodb.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/mongodb.yaml
 kubectl -n "$NAMESPACE" rollout status statefulset/mongodb
 ```
 
 ## 9) Deploy Services and Frontend
 
-Create one Deployment/Service per microservice using the manifests in `new-structure/docs/setup/ubuntu/k8s`,
+Create one Deployment/Service per microservice using the manifests in `docs/setup/ubuntu/k8s`,
 then apply the frontend manifest. EKS uses ALB path routing; do not use the NGINX gateway.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/identity-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/enrollment-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/department-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/sports-participation-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/event-configuration-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scheduling-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scoring-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/reporting-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/frontend.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/identity-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/enrollment-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/department-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/sports-participation-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/event-configuration-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scheduling-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scoring-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/reporting-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/frontend.yaml
 
 kubectl -n "$NAMESPACE" rollout status deploy/identity-service
 kubectl -n "$NAMESPACE" rollout status deploy/annual-sports-frontend
@@ -452,17 +452,17 @@ Remove Kubernetes resources:
 
 ```bash
 kubectl delete ingress -n "$NAMESPACE" "${NAMESPACE}-ingress"
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/frontend.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/identity-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/enrollment-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/department-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/sports-participation-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/event-configuration-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/scheduling-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/scoring-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/reporting-service.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/mongodb.yaml
-kubectl delete -f new-structure/docs/setup/ubuntu/k8s/redis.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/frontend.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/identity-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/enrollment-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/department-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/sports-participation-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/event-configuration-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/scheduling-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/scoring-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/reporting-service.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/mongodb.yaml
+kubectl delete -f docs/setup/ubuntu/k8s/redis.yaml
 kubectl delete namespace "$NAMESPACE"
 ```
 
