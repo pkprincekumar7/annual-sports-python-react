@@ -11,9 +11,13 @@ private_subnets     = ["10.10.11.0/24", "10.10.12.0/24"]
 api_domain = "sports-dev-api.your-domain.com"
 route53_zone_id = "Z1234567890"
 acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+alb_access_logs_bucket_name = "as-dev-123456789012-alb-logs"
 email_provider = "gmail"
 gmail_user = "your-email@gmail.com"
 email_from = "no-reply@your-domain.com"
+
+# Redis (required when transit encryption is enabled)
+redis_auth_token = "replace-with-strong-token"
 
 # Observability
 # alarm_sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:alerts"

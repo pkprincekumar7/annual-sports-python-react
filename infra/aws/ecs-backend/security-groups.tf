@@ -33,7 +33,7 @@ resource "aws_security_group_rule" "alb_egress" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = [module.vpc.vpc_cidr_block]
   security_group_id = aws_security_group.alb.id
 }
 
@@ -42,7 +42,7 @@ resource "aws_security_group_rule" "ecs_tasks_egress" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = var.ecs_tasks_egress_cidrs
   security_group_id = aws_security_group.ecs_tasks.id
 }
 

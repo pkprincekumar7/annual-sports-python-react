@@ -33,6 +33,8 @@ locals {
   alb_name    = "${local.name_prefix}-alb"
   ecs_tasks_name = "${local.name_prefix}-ecs-tasks"
   redis_name     = "${local.name_prefix}-redis"
+  alb_logs_bucket_name = var.alb_access_logs_bucket_name
+  secrets_kms_key_arn  = var.secrets_kms_key_arn != "" ? var.secrets_kms_key_arn : (var.create_secrets_kms_key ? aws_kms_key.secrets[0].arn : null)
   tg_names = {
     "identity-service"             = "id"
     "enrollment-service"           = "enr"
@@ -163,7 +165,9 @@ locals {
     )
   }
 
-  redis_base_url = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:${aws_elasticache_cluster.redis.port}"
+  redis_multi_az_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
+  redis_automatic_failover_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
+  redis_base_url = "redis://${aws_elasticache_replication_group.redis.primary_endpoint_address}:${aws_elasticache_replication_group.redis.port}"
 
   service_cpu = {
     for name, _ in local.services :

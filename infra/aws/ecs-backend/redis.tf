@@ -23,16 +23,24 @@ resource "aws_security_group_rule" "redis_egress" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = [module.vpc.vpc_cidr_block]
   security_group_id = aws_security_group.redis.id
 }
 
-resource "aws_elasticache_cluster" "redis" {
-  cluster_id           = local.redis_name
-  engine               = "redis"
-  node_type            = var.redis_node_type
-  num_cache_nodes      = var.redis_num_cache_nodes
-  port                 = 6379
-  subnet_group_name    = aws_elasticache_subnet_group.redis.name
-  security_group_ids   = [aws_security_group.redis.id]
+resource "aws_elasticache_replication_group" "redis" {
+  replication_group_id          = local.redis_name
+  description                   = "Redis replication group for ${local.name_prefix}."
+  engine                        = "redis"
+  node_type                     = var.redis_node_type
+  num_cache_clusters            = var.redis_num_cache_nodes
+  port                          = 6379
+  subnet_group_name             = aws_elasticache_subnet_group.redis.name
+  security_group_ids            = [aws_security_group.redis.id]
+  automatic_failover_enabled    = local.redis_automatic_failover_enabled
+  multi_az_enabled              = local.redis_multi_az_enabled
+  transit_encryption_enabled    = var.redis_transit_encryption_enabled
+  at_rest_encryption_enabled    = var.redis_at_rest_encryption_enabled
+  auth_token                    = var.redis_auth_token
+  snapshot_retention_limit      = var.redis_snapshot_retention_limit
+  snapshot_window               = var.redis_snapshot_window
 }

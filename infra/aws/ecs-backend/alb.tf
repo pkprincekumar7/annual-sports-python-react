@@ -4,6 +4,13 @@ resource "aws_lb" "app" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = module.vpc.public_subnets
+  enable_deletion_protection = var.alb_deletion_protection
+
+  access_logs {
+    enabled = var.alb_access_logs_enabled
+    bucket  = data.aws_s3_bucket.alb_logs.id
+    prefix  = var.alb_access_logs_prefix
+  }
 }
 
 resource "aws_route53_record" "api_domain" {
@@ -28,6 +35,11 @@ resource "aws_lb_target_group" "services" {
   vpc_id     = module.vpc.vpc_id
   health_check {
     path = each.value.health_path
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    matcher             = "200-399"
   }
 }
 
@@ -50,7 +62,7 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.app.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  ssl_policy        = var.alb_ssl_policy
   certificate_arn   = var.acm_certificate_arn
 
   default_action {

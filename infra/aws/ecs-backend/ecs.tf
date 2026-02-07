@@ -37,7 +37,7 @@ resource "aws_ecs_task_definition" "services" {
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 30
+        startPeriod = 60
       }
       ulimits = [
         {
@@ -67,7 +67,12 @@ resource "aws_ecs_service" "services" {
   launch_type     = "FARGATE"
   enable_execute_command = true
   platform_version      = "LATEST"
-  force_new_deployment  = true
+  force_new_deployment  = var.force_new_deployment
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets          = module.vpc.private_subnets

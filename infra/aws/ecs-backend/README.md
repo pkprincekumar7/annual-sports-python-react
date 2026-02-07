@@ -40,19 +40,40 @@ Update `dev.tfvars`:
 - `api_domain` (optional, API domain)
 - `route53_zone_id` (optional, to auto-create API DNS record)
 - `acm_certificate_arn` (required, enables HTTPS-only ALB)
+- Optional ALB settings: `alb_ssl_policy`, `alb_deletion_protection`,
+  `alb_access_logs_enabled`, `alb_access_logs_bucket_name`, `alb_access_logs_prefix`
+- Optional WAF: `waf_enabled`
+- Optional VPC flow logs: `flow_logs_enabled`, `flow_logs_retention_days`
+- Optional Secrets KMS: `create_secrets_kms_key`, `secrets_kms_key_arn`
+- Optional Secrets deletion: `secrets_recovery_window_in_days`
 - `image_tag` (must match the tag you push)
 - Optional app config: `jwt_expires_in`, `admin_reg_number`, `app_env`, `log_level`
 - Optional autoscaling overrides: `autoscale_min`, `autoscale_max`, `autoscale_cpu_target`,
-  `autoscale_memory_target`, `autoscale_alb_requests_target`
+  `autoscale_memory_target`, `autoscale_alb_requests_target`,
+  `autoscale_scale_in_cooldown`, `autoscale_scale_out_cooldown`
 - Optional observability overrides: `log_retention_days`, `alarm_cpu_threshold`,
-  `alarm_memory_threshold`, `alarm_sns_topic_arn`
+  `alarm_memory_threshold`, `alarm_alb_5xx_threshold`, `alarm_target_5xx_threshold`,
+  `alarm_unhealthy_host_threshold`, `alarm_target_response_time_threshold`, `alarm_sns_topic_arn`
 - Per-service sizing: `service_cpu_map`, `service_memory_map`, `ulimit_nofile_soft`, `ulimit_nofile_hard`
+- Optional deployment behavior: `force_new_deployment`
 - Optional email config: `email_provider`, `gmail_user`, `sendgrid_user`,
   `smtp_host`, `smtp_user`, `smtp_port`, `smtp_secure`, `email_from`, `email_from_name`
 - Optional branding: `app_name`
+- Optional Redis settings: `redis_node_type`, `redis_num_cache_nodes`,
+  `redis_transit_encryption_enabled`, `redis_at_rest_encryption_enabled`,
+  `redis_auth_token`, `redis_multi_az_enabled`, `redis_snapshot_retention_limit`,
+  `redis_snapshot_window`
 
 Database names are derived automatically using `env` (for example,
 `as-dev-identity`, `as-dev-enrollment`, etc.).
+
+### ALB Access Logs Bucket (Manual)
+
+Terraform expects an existing S3 bucket for ALB access logs. Create the bucket
+manually, then set `alb_access_logs_bucket_name` in `tfvars`. Terraform will
+attach the bucket policy, ownership controls, public access block, and default
+encryption. On `terraform destroy`, these policy/config resources are removed,
+but the S3 bucket itself is not deleted.
 
 ### 3) Create ECR Repositories (Target Apply)
 

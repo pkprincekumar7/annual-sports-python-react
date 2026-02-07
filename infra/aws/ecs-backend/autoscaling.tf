@@ -20,6 +20,8 @@ resource "aws_appautoscaling_policy" "cpu" {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
     target_value = var.autoscale_cpu_target
+    scale_in_cooldown  = var.autoscale_scale_in_cooldown
+    scale_out_cooldown = var.autoscale_scale_out_cooldown
   }
 }
 
@@ -36,6 +38,8 @@ resource "aws_appautoscaling_policy" "memory" {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
     target_value = var.autoscale_memory_target
+    scale_in_cooldown  = var.autoscale_scale_in_cooldown
+    scale_out_cooldown = var.autoscale_scale_out_cooldown
   }
 }
 
@@ -53,6 +57,8 @@ resource "aws_appautoscaling_policy" "alb_requests" {
       resource_label         = "${aws_lb.app.arn_suffix}/${aws_lb_target_group.services[each.key].arn_suffix}"
     }
     target_value = var.autoscale_alb_requests_target
+    scale_in_cooldown  = var.autoscale_scale_in_cooldown
+    scale_out_cooldown = var.autoscale_scale_out_cooldown
   }
 }
 
