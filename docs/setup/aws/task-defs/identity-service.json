@@ -48,6 +48,13 @@
         { "name": "RESEND_API_KEY", "valueFrom": "${RESEND_API_KEY_ARN}" },
         { "name": "SMTP_PASSWORD", "valueFrom": "${SMTP_PASSWORD_ARN}" }
       ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://localhost:8001/health > /dev/null"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

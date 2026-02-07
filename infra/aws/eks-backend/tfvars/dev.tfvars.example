@@ -1,7 +1,7 @@
 # Example values for dev
 aws_region      = "us-east-1"
 aws_account_id  = "123456789012"
-cluster_name    = "annual-sports-dev"
+env             = "dev"
 vpc_cidr        = "10.10.0.0/16"
 
 availability_zones = ["us-east-1a", "us-east-1b"]
@@ -11,23 +11,19 @@ private_subnets     = ["10.10.11.0/24", "10.10.12.0/24"]
 api_domain = "sports-dev-api.your-domain.com"
 acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
 
-image_tag = "latest"
-
-mongo_uri = "mongodb+srv://user:pass@cluster"
-
-database_names = {
-  "identity-service"             = "annual-sports-identity-dev"
-  "enrollment-service"           = "annual-sports-enrollment-dev"
-  "department-service"           = "annual-sports-department-dev"
-  "sports-participation-service" = "annual-sports-participation-dev"
-  "event-configuration-service"  = "annual-sports-event-config-dev"
-  "scheduling-service"           = "annual-sports-scheduling-dev"
-  "scoring-service"              = "annual-sports-scoring-dev"
-  "reporting-service"            = "annual-sports-reporting-dev"
-}
-
-jwt_secret = "replace-with-strong-secret"
 email_provider = "gmail"
 gmail_user = "your-email@gmail.com"
-gmail_app_password = "your-app-password"
 email_from = "no-reply@your-domain.com"
+
+# Optional KEDA scaling (enable after ALB target groups exist)
+# enable_keda_alb_scaling = true
+# alb_target_group_arn_suffixes = {
+#   "identity-service"             = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "enrollment-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "department-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "sports-participation-service" = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "event-configuration-service"  = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "scheduling-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "scoring-service"              = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "reporting-service"            = "targetgroup/xxxx/xxxxxxxxxxxx"
+# }
