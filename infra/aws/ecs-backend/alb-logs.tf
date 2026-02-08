@@ -2,17 +2,13 @@ data "aws_s3_bucket" "alb_logs" {
   bucket = local.alb_logs_bucket_name
 }
 
-data "aws_s3_bucket_location" "alb_logs" {
-  bucket = data.aws_s3_bucket.alb_logs.id
-}
-
 resource "null_resource" "alb_logs_region_check" {
   lifecycle {
     precondition {
       condition = (
-        data.aws_s3_bucket_location.alb_logs.region == null ||
-        data.aws_s3_bucket_location.alb_logs.region == "" ||
-        data.aws_s3_bucket_location.alb_logs.region == var.aws_region
+        data.aws_s3_bucket.alb_logs.region == null ||
+        data.aws_s3_bucket.alb_logs.region == "" ||
+        data.aws_s3_bucket.alb_logs.region == var.aws_region
       )
       error_message = "alb_access_logs_bucket_name must be in the same region as aws_region."
     }
