@@ -34,6 +34,7 @@ resource "aws_iam_policy" "secrets_access" {
         Resource = [
           aws_secretsmanager_secret.jwt_secret.arn,
           aws_secretsmanager_secret.mongo_uri.arn,
+          aws_secretsmanager_secret.redis_auth_token.arn,
           aws_secretsmanager_secret.gmail_app_password.arn,
           aws_secretsmanager_secret.sendgrid_api_key.arn,
           aws_secretsmanager_secret.resend_api_key.arn,
@@ -47,6 +48,29 @@ resource "aws_iam_policy" "secrets_access" {
 resource "aws_iam_role_policy_attachment" "task_execution_secrets" {
   role       = aws_iam_role.task_execution.name
   policy_arn = aws_iam_policy.secrets_access.arn
+}
+
+resource "aws_iam_policy" "kms_decrypt" {
+  name        = "${local.name_prefix}-kms-decrypt"
+  description = "Allow ECS task execution to decrypt Secrets Manager secrets."
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = local.secrets_kms_key_arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_kms" {
+  role       = aws_iam_role.task_execution.name
+  policy_arn = aws_iam_policy.kms_decrypt.arn
 }
 
 resource "aws_iam_role" "task_role" {

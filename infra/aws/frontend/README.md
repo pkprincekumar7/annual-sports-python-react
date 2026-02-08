@@ -59,6 +59,19 @@ terraform plan -var-file=dev.tfvars
 terraform apply -var-file=dev.tfvars
 ```
 
+Run in background (keeps running after disconnect, no prompt):
+
+```bash
+nohup terraform apply -var-file=dev.tfvars -auto-approve > terraform-apply.log 2>&1 &
+disown
+```
+
+Tail logs:
+
+```bash
+tail -f terraform-apply.log
+```
+
 ### 3) Deploy Frontend Build
 
 ```bash

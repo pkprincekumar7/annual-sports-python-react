@@ -99,6 +99,11 @@ should use separate buckets (no prefixes required). Terraform will attach the
 CloudFront log delivery bucket policy and ACL/ownership controls to the logs
 bucket, and remove them on destroy. The bucket itself is not deleted.
 
+Secrets Manager uses a KMS key. Terraform grants the ECS task execution role
+`kms:Decrypt` and `kms:GenerateDataKey` on the managed key. If you supply an
+existing KMS key (`secrets_kms_key_arn`), ensure its key policy allows the task
+execution role to decrypt.
+
 ### 3) Create ECR Repositories (Target Apply)
 
 Terraform manages ECR, so create repos first:
@@ -236,7 +241,21 @@ terraform import -var-file=dev.tfvars aws_secretsmanager_secret.smtp_password "$
 ### 6) Apply Full Stack
 
 ```bash
+terraform plan -var-file=dev.tfvars
 terraform apply -var-file=dev.tfvars
+```
+
+Run in background (keeps running after disconnect, no prompt):
+
+```bash
+nohup terraform apply -var-file=dev.tfvars -auto-approve > terraform-apply.log 2>&1 &
+disown
+```
+
+Tail logs:
+
+```bash
+tail -f terraform-apply.log
 ```
 
 ### 7) Verify
