@@ -85,7 +85,8 @@ The ALB is not public. Use API Gateway as the only public entry point.
 - The ACM certificate must be in the same region as API Gateway.
 - If `api_domain` and `route53_zone_id` are set, Terraform creates an alias
   record pointing the API domain to API Gateway (not the ALB).
-- If `api_domain` is empty, use the `api_gateway_endpoint` output.
+- If `api_domain` is empty, use the `api_gateway_endpoint` output and append
+  `/${env}` (stage name) for requests.
 - API Gateway access logs are enabled and use the same retention as
   `log_retention_days`.
 - ALB deletion protection is disabled by default to allow `terraform destroy`.
