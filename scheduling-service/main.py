@@ -109,6 +109,8 @@ async def request_logging_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def registration_deadline_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
     if request.url.path.startswith("/schedulings"):
         response = await check_registration_deadline(request)
         if response is not None:
