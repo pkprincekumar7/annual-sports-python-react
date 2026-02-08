@@ -37,12 +37,13 @@ Update `dev.tfvars`:
 - `aws_account_id`, `aws_region`
 - `env` (used to derive names like `as-dev`)
 - `public_subnets`, `private_subnets`, `availability_zones`
-- `api_domain` (optional, API domain)
+- `api_domain` (optional, API custom domain for API Gateway)
 - `route53_zone_id` (optional, to auto-create API DNS record)
-- `acm_certificate_arn` (required, enables HTTPS-only ALB)
+- `acm_certificate_arn` (required for API Gateway custom domain and ALB HTTPS listener)
 - Optional ALB settings: `alb_ssl_policy`, `alb_deletion_protection`,
   `alb_access_logs_enabled`, `alb_access_logs_bucket_name`, `alb_access_logs_prefix`
-- Optional WAF: `waf_enabled`
+- Optional API Gateway CORS: `apigw_cors_allowed_origins`
+- Optional WAF: `waf_enabled` (applies to API Gateway)
 - Optional VPC flow logs: `flow_logs_enabled`, `flow_logs_retention_days`
 - Optional Secrets KMS: `create_secrets_kms_key`, `secrets_kms_key_arn`
 - Optional Secrets deletion: `secrets_recovery_window_in_days`
@@ -74,6 +75,21 @@ manually, then set `alb_access_logs_bucket_name` in `tfvars`. Terraform will
 attach the bucket policy, ownership controls, public access block, and default
 encryption. On `terraform destroy`, these policy/config resources are removed,
 but the S3 bucket itself is not deleted.
+
+### API Gateway + Private ALB (CORS)
+
+This stack provisions an HTTP API Gateway with a VPC Link to a **private** ALB.
+The ALB is not public. Use API Gateway as the only public entry point.
+
+- CORS is enforced at API Gateway using `apigw_cors_allowed_origins`.
+- The ACM certificate must be in the same region as API Gateway.
+- If `api_domain` and `route53_zone_id` are set, Terraform creates an alias
+  record pointing the API domain to API Gateway (not the ALB).
+- If `api_domain` is empty, use the `api_gateway_endpoint` output.
+- API Gateway access logs are enabled and use the same retention as
+  `log_retention_days`.
+- ALB deletion protection is disabled by default to allow `terraform destroy`.
+  If you enable it, set `alb_deletion_protection = false` before destroy.
 
 ### 3) Create ECR Repositories (Target Apply)
 

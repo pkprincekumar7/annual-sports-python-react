@@ -9,6 +9,7 @@ public_subnets      = ["10.30.1.0/24", "10.30.2.0/24"]
 private_subnets     = ["10.30.11.0/24", "10.30.12.0/24"]
 
 api_domain = "sports-stg-api.your-domain.com"
+apigw_cors_allowed_origins = ["https://sports-stg.your-domain.com"]
 route53_zone_id = "Z1234567890"
 acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
 alb_access_logs_bucket_name = "as-stg-123456789012-alb-logs"

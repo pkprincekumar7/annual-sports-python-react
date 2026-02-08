@@ -3,6 +3,16 @@ output "alb_dns_name" {
   description = "ALB DNS name."
 }
 
+output "api_gateway_endpoint" {
+  value       = aws_apigatewayv2_api.http.api_endpoint
+  description = "Default API Gateway endpoint."
+}
+
+output "api_gateway_domain" {
+  value       = var.api_domain != "" ? aws_apigatewayv2_domain_name.api[0].domain_name : ""
+  description = "Custom API domain name, if configured."
+}
+
 output "redis_endpoint" {
   value       = aws_elasticache_replication_group.redis.primary_endpoint_address
   description = "ElastiCache Redis endpoint."

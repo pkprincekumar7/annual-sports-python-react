@@ -1,9 +1,9 @@
 resource "aws_lb" "app" {
   name               = local.alb_name
-  internal           = false
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = module.vpc.public_subnets
+  subnets            = module.vpc.private_subnets
   enable_deletion_protection = var.alb_deletion_protection
 
   access_logs {
@@ -20,8 +20,8 @@ resource "aws_route53_record" "api_domain" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.app.dns_name
-    zone_id                = aws_lb.app.zone_id
+    name                   = aws_apigatewayv2_domain_name.api[0].domain_name_configuration[0].target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.api[0].domain_name_configuration[0].hosted_zone_id
     evaluate_target_health = true
   }
 }
@@ -40,21 +40,6 @@ resource "aws_lb_target_group" "services" {
     healthy_threshold   = 2
     unhealthy_threshold = 3
     matcher             = "200-399"
-  }
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
   }
 }
 

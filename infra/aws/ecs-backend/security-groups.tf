@@ -4,19 +4,16 @@ resource "aws_security_group" "alb" {
   vpc_id      = module.vpc.vpc_id
 }
 
+resource "aws_security_group" "apigw_vpclink" {
+  name        = "${local.name_prefix}-apigw-vpclink"
+  description = "API Gateway VPC Link security group"
+  vpc_id      = module.vpc.vpc_id
+}
+
 resource "aws_security_group" "ecs_tasks" {
   name        = local.ecs_tasks_name
   description = "ECS tasks security group"
   vpc_id      = module.vpc.vpc_id
-}
-
-resource "aws_security_group_rule" "alb_ingress_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.alb.id
 }
 
 resource "aws_security_group_rule" "alb_ingress_https" {
@@ -24,8 +21,17 @@ resource "aws_security_group_rule" "alb_ingress_https" {
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  source_security_group_id = aws_security_group.apigw_vpclink.id
   security_group_id = aws_security_group.alb.id
+}
+
+resource "aws_security_group_rule" "apigw_vpclink_egress_https" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.apigw_vpclink.id
+  destination_security_group_id = aws_security_group.alb.id
 }
 
 resource "aws_security_group_rule" "alb_egress" {

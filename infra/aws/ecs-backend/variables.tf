@@ -82,7 +82,7 @@ variable "alb_ssl_policy" {
 
 variable "alb_deletion_protection" {
   type        = bool
-  default     = true
+  default     = false
   description = "Enable deletion protection for the ALB."
 }
 
@@ -368,6 +368,12 @@ variable "log_level" {
   type        = string
   default     = "INFO"
   description = "Log level."
+}
+
+variable "apigw_cors_allowed_origins" {
+  type        = list(string)
+  default     = ["*"]
+  description = "CORS allowed origins for API Gateway (HTTP API)."
 }
 
 variable "email_provider" {
