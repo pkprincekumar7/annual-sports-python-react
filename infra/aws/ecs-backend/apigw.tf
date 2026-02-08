@@ -28,7 +28,7 @@ resource "aws_apigatewayv2_integration" "alb" {
   integration_method     = "ANY"
   connection_type        = "VPC_LINK"
   connection_id          = aws_apigatewayv2_vpc_link.alb.id
-  integration_uri        = aws_lb_listener.https.arn
+  integration_uri        = aws_lb_listener.http.arn
   payload_format_version = "1.0"
 }
 
