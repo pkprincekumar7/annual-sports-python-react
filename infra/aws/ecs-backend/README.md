@@ -13,7 +13,7 @@ Terraform for ECS is already scaffolded here:
 Before you run Terraform, create the S3 bucket and DynamoDB table manually. The
 environment backend files are committed so everyone shares the same bucket/table.
 Update the `hcl/backend-*.hcl` files with your actual bucket and table names
-before `terraform init`.
+before `terraform init`. For multi-region, use a region-specific state key.
 
 Recommended bucket/table setup:
 - S3 bucket: versioning enabled, default encryption enabled, public access blocked
@@ -34,16 +34,16 @@ cp tfvars/dev.tfvars.example dev.tfvars
 ```
 
 Update `dev.tfvars`:
-- `aws_account_id`, `aws_region`
-- `env` (used to derive names like `as-dev`)
-- `public_subnets`, `private_subnets`, `availability_zones`
-- `api_domain` (optional, API custom domain for API Gateway)
-- `route53_zone_id` (optional, to auto-create API DNS record)
-- `acm_certificate_arn` (required for API Gateway custom domain and ALB HTTPS listener)
+- Core: `aws_account_id`, `aws_region`, `env`
+- Networking: `public_subnets`, `private_subnets`, `availability_zones`
+- Domains & certs: `api_domain`, `route53_zone_id`, `acm_certificate_arn`,
+  `cloudfront_acm_certificate_arn`
+- Logging buckets: `alb_access_logs_bucket_name`, `cloudfront_logs_bucket_name`
+- CORS: `apigw_cors_allowed_origins`
 - Optional ALB settings: `alb_ssl_policy`, `alb_deletion_protection`,
-  `alb_access_logs_enabled`, `alb_access_logs_bucket_name`, `alb_access_logs_prefix`
-- Optional API Gateway CORS: `apigw_cors_allowed_origins`
-- Optional WAF: `waf_enabled` (applies to API Gateway)
+  `alb_access_logs_enabled`, `alb_access_logs_prefix`
+- Optional WAF: `waf_enabled` (applies to CloudFront)
+- Optional CloudFront logs: `cloudfront_logging_enabled`
 - Optional VPC flow logs: `flow_logs_enabled`, `flow_logs_retention_days`
 - Optional Secrets KMS: `create_secrets_kms_key`, `secrets_kms_key_arn`
 - Optional Secrets deletion: `secrets_recovery_window_in_days`
@@ -62,7 +62,7 @@ Update `dev.tfvars`:
 - Optional branding: `app_name`
 - Optional Redis settings: `redis_node_type`, `redis_num_cache_nodes`,
   `redis_transit_encryption_enabled`, `redis_at_rest_encryption_enabled`,
-  `redis_auth_token`, `redis_multi_az_enabled`, `redis_snapshot_retention_limit`,
+  `redis_multi_az_enabled`, `redis_snapshot_retention_limit`,
   `redis_snapshot_window`
 
 Database names are derived automatically using `env` (for example,
@@ -79,18 +79,25 @@ but the S3 bucket itself is not deleted.
 ### API Gateway + Private ALB (CORS)
 
 This stack provisions an HTTP API Gateway with a VPC Link to a **private** ALB.
-The ALB is not public. Use API Gateway as the only public entry point.
+CloudFront sits in front of API Gateway for edge protection and WAF.
 
 - CORS is enforced at API Gateway using `apigw_cors_allowed_origins`.
-- The ACM certificate must be in the same region as API Gateway.
+- The ALB ACM certificate must be in the same region as the ECS stack.
 - If `api_domain` and `route53_zone_id` are set, Terraform creates an alias
-  record pointing the API domain to API Gateway (not the ALB).
-- If `api_domain` is empty, use the `api_gateway_endpoint` output and append
-  `/${env}` (stage name) for requests.
+  record pointing the API domain to **CloudFront**.
+- If `api_domain` is empty, use the `cloudfront_domain` output for requests.
 - API Gateway access logs are enabled and use the same retention as
   `log_retention_days`.
 - ALB deletion protection is disabled by default to allow `terraform destroy`.
   If you enable it, set `alb_deletion_protection = false` before destroy.
+
+CloudFront uses `cloudfront_acm_certificate_arn` (must be in `us-east-1`) when
+`api_domain` is set.
+
+If you enable CloudFront logs, use an existing bucket. Backend and frontend
+should use separate buckets (no prefixes required). Terraform will attach the
+CloudFront log delivery bucket policy and ACL/ownership controls to the logs
+bucket, and remove them on destroy. The bucket itself is not deleted.
 
 ### 3) Create ECR Repositories (Target Apply)
 
@@ -164,6 +171,7 @@ Create the Secrets Manager resources with Terraform.
 ```bash
 terraform apply -target=aws_secretsmanager_secret.jwt_secret \
   -target=aws_secretsmanager_secret.mongo_uri \
+  -target=aws_secretsmanager_secret.redis_auth_token \
   -target=aws_secretsmanager_secret.gmail_app_password \
   -target=aws_secretsmanager_secret.sendgrid_api_key \
   -target=aws_secretsmanager_secret.resend_api_key \
@@ -179,6 +187,7 @@ CLI examples (replace values):
 ```bash
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-jwt" --secret-string "replace-with-strong-secret"
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-mongo-uri" --secret-string "mongodb+srv://user:pass@cluster"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-redis-auth-token" --secret-string "replace-with-strong-token"
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-gmail-app-password" --secret-string "your-app-password"
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-sendgrid-api-key" --secret-string "your-sendgrid-api-key"
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-resend-api-key" --secret-string "your-resend-api-key"
@@ -191,6 +200,7 @@ restore it before running the Terraform target apply:
 ```bash
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-jwt"
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-mongo-uri"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-redis-auth-token"
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-gmail-app-password"
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-sendgrid-api-key"
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-resend-api-key"
@@ -206,6 +216,9 @@ terraform import -var-file=dev.tfvars aws_secretsmanager_secret.jwt_secret "$SEC
 
 SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-mongo-uri" --query 'ARN' --output text)
 terraform import -var-file=dev.tfvars aws_secretsmanager_secret.mongo_uri "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-redis-auth-token" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.redis_auth_token "$SECRET_ARN"
 
 SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-gmail-app-password" --query 'ARN' --output text)
 terraform import -var-file=dev.tfvars aws_secretsmanager_secret.gmail_app_password "$SECRET_ARN"
@@ -228,19 +241,19 @@ terraform apply -var-file=dev.tfvars
 
 ### 7) Verify
 
-Get ALB DNS:
+Get CloudFront domain:
 
 ```bash
-terraform output -raw alb_dns_name
+terraform output -raw cloudfront_domain
 ```
 
 Then test the API:
 
 ```bash
-curl -I https://<alb-dns-name>/identities/docs
+curl -I https://<cloudfront-domain>/identities/docs
 ```
 
-If you provided `acm_certificate_arn` and DNS, use HTTPS:
+If you provided `api_domain` and DNS, use HTTPS:
 
 ```bash
 curl -I https://your-api-domain.com/identities/docs

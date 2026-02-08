@@ -40,7 +40,12 @@ resource "aws_elasticache_replication_group" "redis" {
   multi_az_enabled              = local.redis_multi_az_enabled
   transit_encryption_enabled    = var.redis_transit_encryption_enabled
   at_rest_encryption_enabled    = var.redis_at_rest_encryption_enabled
-  auth_token                    = var.redis_auth_token
+  auth_token                    = var.redis_transit_encryption_enabled ? data.aws_secretsmanager_secret_version.redis_auth_token[0].secret_string : null
   snapshot_retention_limit      = var.redis_snapshot_retention_limit
   snapshot_window               = var.redis_snapshot_window
+}
+
+data "aws_secretsmanager_secret_version" "redis_auth_token" {
+  count     = var.redis_transit_encryption_enabled ? 1 : 0
+  secret_id = aws_secretsmanager_secret.redis_auth_token.id
 }

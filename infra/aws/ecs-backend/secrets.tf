@@ -10,6 +10,12 @@ resource "aws_secretsmanager_secret" "mongo_uri" {
   recovery_window_in_days = var.secrets_recovery_window_in_days
 }
 
+resource "aws_secretsmanager_secret" "redis_auth_token" {
+  name       = local.secret_names.redis_auth_token
+  kms_key_id = local.secrets_kms_key_arn
+  recovery_window_in_days = var.secrets_recovery_window_in_days
+}
+
 resource "aws_secretsmanager_secret" "gmail_app_password" {
   name       = local.secret_names.gmail_app_password
   kms_key_id = local.secrets_kms_key_arn

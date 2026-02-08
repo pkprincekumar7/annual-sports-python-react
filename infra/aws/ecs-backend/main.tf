@@ -2,6 +2,11 @@ provider "aws" {
   region = var.aws_region
 }
 
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 locals {
   services = {
     "identity-service" = { port = 8001, health_path = "/health" }
@@ -117,6 +122,7 @@ locals {
   secret_names = {
     jwt_secret         = "${local.name_prefix}-jwt"
     mongo_uri          = "${local.name_prefix}-mongo-uri"
+    redis_auth_token   = "${local.name_prefix}-redis-auth-token"
     gmail_app_password = "${local.name_prefix}-gmail-app-password"
     sendgrid_api_key   = "${local.name_prefix}-sendgrid-api-key"
     resend_api_key     = "${local.name_prefix}-resend-api-key"
@@ -167,8 +173,9 @@ locals {
 
   redis_multi_az_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
   redis_automatic_failover_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
+  redis_auth_token = var.redis_transit_encryption_enabled ? data.aws_secretsmanager_secret_version.redis_auth_token[0].secret_string : ""
   redis_scheme   = var.redis_transit_encryption_enabled ? "rediss" : "redis"
-  redis_auth     = var.redis_auth_token != "" ? ":${urlencode(var.redis_auth_token)}@" : ""
+  redis_auth     = local.redis_auth_token != "" ? ":${urlencode(local.redis_auth_token)}@" : ""
   redis_base_url = "${local.redis_scheme}://${local.redis_auth}${aws_elasticache_replication_group.redis.primary_endpoint_address}:${aws_elasticache_replication_group.redis.port}"
 
   service_cpu = {

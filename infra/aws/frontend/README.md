@@ -19,15 +19,12 @@ cp tfvars/dev.tfvars.example dev.tfvars
 ```
 
 Update `dev.tfvars`:
-- `aws_region` (use `us-east-1`)
-- `bucket_name`
-- `cloudfront_logs_bucket_name` (required if logging enabled)
-- `domain` (optional, custom frontend domain)
-- `route53_zone_id` (optional, for DNS record)
-- `cloudfront_acm_certificate_arn` (optional, required for custom domain)
-- `cloudfront_price_class`
+- Core: `aws_region` (use `us-east-1`)
+- Buckets: `bucket_name`, `cloudfront_logs_bucket_name`
+- Domain & cert: `domain`, `route53_zone_id`, `cloudfront_acm_certificate_arn`
+- CloudFront: `cloudfront_price_class`
 - Optional security/ops:
-  - `cloudfront_logging_enabled`, `cloudfront_logs_prefix`
+  - `cloudfront_logging_enabled`
   - `cloudfront_minimum_protocol_version`
   - `waf_enabled`
   - `security_headers_enabled`

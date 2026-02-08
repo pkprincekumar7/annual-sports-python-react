@@ -8,9 +8,9 @@ output "api_gateway_endpoint" {
   description = "Default API Gateway endpoint."
 }
 
-output "api_gateway_domain" {
-  value       = var.api_domain != "" ? aws_apigatewayv2_domain_name.api[0].domain_name : ""
-  description = "Custom API domain name, if configured."
+output "cloudfront_domain" {
+  value       = aws_cloudfront_distribution.api.domain_name
+  description = "CloudFront distribution domain for the API."
 }
 
 output "redis_endpoint" {

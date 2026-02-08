@@ -68,6 +68,32 @@ variable "acm_certificate_arn" {
   }
 }
 
+variable "cloudfront_acm_certificate_arn" {
+  type        = string
+  default     = ""
+  description = "ACM certificate ARN in us-east-1 for CloudFront custom domain."
+  validation {
+    condition     = var.api_domain == "" || var.cloudfront_acm_certificate_arn != ""
+    error_message = "cloudfront_acm_certificate_arn must be set when api_domain is provided."
+  }
+}
+
+variable "cloudfront_logs_bucket_name" {
+  type        = string
+  default     = ""
+  description = "Optional existing S3 bucket name for CloudFront access logs."
+  validation {
+    condition     = var.cloudfront_logging_enabled ? var.cloudfront_logs_bucket_name != "" : true
+    error_message = "cloudfront_logs_bucket_name must be set when cloudfront_logging_enabled is true."
+  }
+}
+
+variable "cloudfront_logging_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable CloudFront access logging."
+}
+
 variable "route53_zone_id" {
   type        = string
   default     = ""
@@ -185,16 +211,6 @@ variable "redis_at_rest_encryption_enabled" {
   description = "Enable at-rest encryption for Redis."
 }
 
-variable "redis_auth_token" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Auth token for Redis. Required when transit encryption is enabled."
-  validation {
-    condition     = var.redis_transit_encryption_enabled ? length(var.redis_auth_token) > 0 : true
-    error_message = "redis_auth_token must be set when redis_transit_encryption_enabled is true."
-  }
-}
 
 variable "redis_multi_az_enabled" {
   type        = bool

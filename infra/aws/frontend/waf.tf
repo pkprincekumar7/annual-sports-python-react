@@ -1,4 +1,5 @@
 resource "aws_wafv2_web_acl" "frontend" {
+  provider = aws.us_east_1
   count = var.waf_enabled ? 1 : 0
 
   name  = "${var.bucket_name}-waf"

@@ -1,24 +1,32 @@
 # Example values for perf
+# Core
 aws_region     = "us-east-1"
 aws_account_id = "123456789012"
 env            = "perf"
-vpc_cidr       = "10.40.0.0/16"
 
+# Networking
+vpc_cidr = "10.40.0.0/16"
 availability_zones = ["us-east-1a", "us-east-1b"]
 public_subnets      = ["10.40.1.0/24", "10.40.2.0/24"]
 private_subnets     = ["10.40.11.0/24", "10.40.12.0/24"]
 
+# Domains & certificates
 api_domain = "sports-perf-api.your-domain.com"
-apigw_cors_allowed_origins = ["https://sports-perf.your-domain.com"]
 route53_zone_id = "Z1234567890"
 acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
-alb_access_logs_bucket_name = "as-perf-123456789012-alb-logs"
+cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cloudfront-cert-id"
+
+# Logging buckets
+alb_access_logs_bucket_name = "your-alb-logs-bucket"
+cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
+
+# CORS
+apigw_cors_allowed_origins = ["https://sports-perf.your-domain.com"]
+
+# Email
 email_provider = "gmail"
 gmail_user = "your-email@gmail.com"
 email_from = "no-reply@your-domain.com"
-
-# Redis (required when transit encryption is enabled)
-redis_auth_token = "replace-with-strong-token"
 
 # Observability
 # alarm_sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:alerts"
