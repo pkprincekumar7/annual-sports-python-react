@@ -40,7 +40,7 @@ resource "aws_apigatewayv2_route" "default" {
 
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
-  name        = var.env
+  name        = "$default"
   auto_deploy = true
 
   access_log_settings {
