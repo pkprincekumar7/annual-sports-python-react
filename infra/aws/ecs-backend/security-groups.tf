@@ -31,7 +31,7 @@ resource "aws_security_group_rule" "apigw_vpclink_egress_https" {
   to_port           = 443
   protocol          = "tcp"
   security_group_id = aws_security_group.apigw_vpclink.id
-  destination_security_group_id = aws_security_group.alb.id
+  cidr_blocks       = [module.vpc.vpc_cidr_block]
 }
 
 resource "aws_security_group_rule" "alb_egress" {
