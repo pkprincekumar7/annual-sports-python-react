@@ -167,7 +167,9 @@ locals {
 
   redis_multi_az_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
   redis_automatic_failover_enabled = var.redis_num_cache_nodes > 1 ? var.redis_multi_az_enabled : false
-  redis_base_url = "redis://${aws_elasticache_replication_group.redis.primary_endpoint_address}:${aws_elasticache_replication_group.redis.port}"
+  redis_scheme   = var.redis_transit_encryption_enabled ? "rediss" : "redis"
+  redis_auth     = var.redis_auth_token != "" ? ":${urlencode(var.redis_auth_token)}@" : ""
+  redis_base_url = "${local.redis_scheme}://${local.redis_auth}${aws_elasticache_replication_group.redis.primary_endpoint_address}:${aws_elasticache_replication_group.redis.port}"
 
   service_cpu = {
     for name, _ in local.services :
