@@ -1,5 +1,6 @@
 aws_region  = "us-east-1"
 bucket_name = "your-frontend-qa-bucket"
+cloudfront_logs_bucket_name = "your-frontend-logs-bucket"
 
 domain     = "sports-qa.your-domain.com"
 route53_zone_id = "Z1234567890"
