@@ -331,6 +331,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 - Configure Secrets Manager secret names in your environment tfvars (for example, `dev.tfvars`).
 - The MongoDB URI secret is shared; each service selects the DB via `DATABASE_NAME`.
 - Set `route53_zone_id` in tfvars to have Terraform create the API Route 53 record (`api_domain`).
-- Redis is provisioned via ElastiCache; the services use that endpoint automatically.
+- Redis is provisioned via ElastiCache with auth + in‑transit encryption; services use a
+  `rediss://` URL (password included) automatically via `REDIS_URL`.
 - Cloud Map service discovery is enabled; it is derived from `env` (for example, `annual-sports.dev.local`).
 - ECS tasks run in private subnets; only the ALB is public.
