@@ -34,3 +34,18 @@ resource "aws_s3_bucket_policy" "cloudfront_logs" {
   bucket = data.aws_s3_bucket.cloudfront_logs[0].id
   policy = data.aws_iam_policy_document.cloudfront_logs[0].json
 }
+
+resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
+  count  = var.cloudfront_logging_enabled ? 1 : 0
+  bucket = data.aws_s3_bucket.cloudfront_logs[0].id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "cloudfront_logs" {
+  count  = var.cloudfront_logging_enabled ? 1 : 0
+  bucket = data.aws_s3_bucket.cloudfront_logs[0].id
+  acl    = "private"
+  depends_on = [aws_s3_bucket_ownership_controls.cloudfront_logs]
+}

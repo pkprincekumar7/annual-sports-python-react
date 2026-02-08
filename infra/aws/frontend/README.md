@@ -48,6 +48,8 @@ Notes and constraints:
 - If `cloudfront_logging_enabled` is true, `cloudfront_logs_bucket_name` must
   refer to an existing bucket. Terraform does not create it, but it will apply
   the required CloudFront log delivery bucket policy (removed on destroy).
+- CloudFront log buckets must allow ACLs. Terraform sets object ownership to
+  `BucketOwnerPreferred` and applies a private ACL to enable log delivery.
 
 Destroy caveats:
 - Terraform does **not** delete the frontend S3 bucket or the CloudFront logs bucket.
