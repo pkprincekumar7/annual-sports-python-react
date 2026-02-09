@@ -458,6 +458,12 @@ variable "email_from_name" {
   description = "Email from display name."
 }
 
+variable "redis_auth_token_bootstrap" {
+  type        = string
+  default     = ""
+  description = "Optional sample Redis auth token used by CI to initialize Secrets Manager when empty."
+}
+
 variable "app_name" {
   type        = string
   default     = "Sports Event Management System"
