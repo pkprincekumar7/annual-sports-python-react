@@ -376,6 +376,45 @@ terraform apply -var-file=dev.tfvars
 Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 (for example, `hcl/backend-qa.hcl` + `tfvars/qa.tfvars.example`).
 
+## GitHub Actions (Terraform)
+
+This repo includes a manual workflow to run Terraform via GitHub Actions:
+`.github/workflows/ecs-backend-terraform.yml`.
+
+Workflow inputs:
+- `action`: `plan`, `apply`, or `destroy`
+- `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
+- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
+- `role_arn`: IAM role to assume via OIDC
+
+Required GitHub Environment secrets (per env):
+- `STATE_BUCKET`
+- `STATE_DDB_TABLE`
+- `STATE_REGION` (optional; defaults to `aws_region`)
+- `TFVARS_CONTENT` (full tfvars content)
+
+Example inputs:
+- `action`: `apply`
+- `env`: `dev`
+- `aws_region`: `us-east-1`
+- `role_arn`: `arn:aws:iam::123456789012:role/github-terraform`
+
+## GitHub Actions (Deploy)
+
+This repo includes a manual workflow to build, push, and deploy ECS services:
+`.github/workflows/ecs-backend-deploy.yml`.
+
+Workflow inputs:
+- `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
+- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
+- `role_arn`: IAM role to assume via OIDC
+- `services`: `all` or a single service name (dropdown)
+
+Behavior:
+- Builds and pushes images with a UTC timestamp tag (`YYYYMMDDHHMMSS`)
+- Registers new task definition revisions
+- Updates ECS services and waits for stability
+
 ## Notes
 - Configure Secrets Manager secret names in your environment tfvars (for example, `dev.tfvars`).
 - The MongoDB URI secret is shared; each service selects the DB via `DATABASE_NAME`.

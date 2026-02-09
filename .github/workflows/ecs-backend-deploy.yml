@@ -1,0 +1,148 @@
+name: ECS Backend Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment (dev, qa, stg, perf, prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - qa
+          - stg
+          - perf
+          - prod
+      aws_region:
+        description: "AWS region"
+        required: true
+        default: "us-east-1"
+        type: choice
+        options:
+          - us-east-1
+          - eu-west-1
+          - ap-southeast-1
+      role_arn:
+        description: "AWS IAM role to assume via OIDC"
+        required: true
+      services:
+        description: "Service to deploy"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - identity-service
+          - enrollment-service
+          - department-service
+          - sports-participation-service
+          - event-configuration-service
+          - scheduling-service
+          - scoring-service
+          - reporting-service
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ecs-backend-deploy-${{ inputs.env }}-${{ inputs.aws_region }}
+  cancel-in-progress: false
+
+jobs:
+  build_push:
+    runs-on: ubuntu-latest
+    outputs:
+      name_prefix: ${{ steps.vars.outputs.name_prefix }}
+      cluster_name: ${{ steps.vars.outputs.cluster_name }}
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role_arn }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Resolve variables
+        id: vars
+        run: |
+          NAME_PREFIX="as-${{ inputs.env }}"
+          CLUSTER_NAME="annual-sports-${{ inputs.env }}"
+          IMAGE_TAG=$(date -u +"%Y%m%d%H%M%S")
+          echo "name_prefix=$NAME_PREFIX" >> "$GITHUB_OUTPUT"
+          echo "cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "services=${{ inputs.services }}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+          IMAGE_TAG: ${{ steps.vars.outputs.image_tag }}
+          NAME_PREFIX: ${{ steps.vars.outputs.name_prefix }}
+          SERVICES: ${{ steps.vars.outputs.services }}
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REPO_ROOT="$GITHUB_WORKSPACE"
+          if [ -z "$SERVICES" ] || [ "$SERVICES" = "all" ]; then
+            SERVICES="identity-service,enrollment-service,department-service,sports-participation-service,event-configuration-service,scheduling-service,scoring-service,reporting-service"
+          fi
+          IFS=',' read -r -a SERVICE_LIST <<< "$SERVICES"
+          for service in "${SERVICE_LIST[@]}"; do
+            docker build -t "${NAME_PREFIX}-${service}:${IMAGE_TAG}" "$REPO_ROOT/$service"
+            docker tag "${NAME_PREFIX}-${service}:${IMAGE_TAG}" \
+              "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
+            docker push "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${service}:${IMAGE_TAG}"
+          done
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_push
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role_arn }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Register new task definitions and deploy
+        env:
+          CLUSTER_NAME: ${{ needs.build_push.outputs.cluster_name }}
+          NAME_PREFIX: ${{ needs.build_push.outputs.name_prefix }}
+          IMAGE_TAG: ${{ needs.build_push.outputs.image_tag }}
+          AWS_REGION: ${{ inputs.aws_region }}
+          SERVICES: ${{ needs.build_push.outputs.services }}
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          if [ -z "$SERVICES" ] || [ "$SERVICES" = "all" ]; then
+            SERVICES="identity-service,enrollment-service,department-service,sports-participation-service,event-configuration-service,scheduling-service,scoring-service,reporting-service"
+          fi
+          IFS=',' read -r -a SERVICE_LIST <<< "$SERVICES"
+          for short_svc in "${SERVICE_LIST[@]}"; do
+            svc="${NAME_PREFIX}-${short_svc}"
+            CONTAINER_NAME="$short_svc"
+            TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$svc" --query 'services[0].taskDefinition' --output text)
+            TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition')
+            NEW_IMAGE="$IMAGE_PREFIX/${NAME_PREFIX}-${short_svc}:${IMAGE_TAG}"
+            NEW_TASK_DEF=$(echo "$TASK_DEF_JSON" | jq --arg name "$CONTAINER_NAME" --arg image "$NEW_IMAGE" '
+              .containerDefinitions = (.containerDefinitions | map(if .name == $name then .image = $image else . end)) |
+              del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)
+            ')
+            NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
+            aws ecs update-service --cluster "$CLUSTER_NAME" --service "$svc" --task-definition "$NEW_TASK_DEF_ARN"
+          done
+
+          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services $(printf "%s " "${SERVICE_LIST[@]/#/${NAME_PREFIX}-}")

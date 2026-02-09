@@ -98,3 +98,42 @@ Check invalidation status:
 aws cloudfront list-invalidations --distribution-id "$CF_DISTRIBUTION_ID"
 aws cloudfront get-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --id "<invalidation-id>"
 ```
+
+## GitHub Actions (Terraform)
+
+This repo includes a manual workflow to run Terraform via GitHub Actions:
+`.github/workflows/frontend-terraform.yml`.
+
+Workflow inputs:
+- `action`: `plan`, `apply`, or `destroy`
+- `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
+- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
+- `role_arn`: IAM role to assume via OIDC
+
+Required GitHub Environment secrets (per env):
+- `STATE_BUCKET`
+- `STATE_DDB_TABLE`
+- `STATE_REGION` (optional; defaults to `aws_region`)
+- `TFVARS_CONTENT` (full tfvars content)
+
+Example inputs:
+- `action`: `apply`
+- `env`: `dev`
+- `aws_region`: `us-east-1`
+- `role_arn`: `arn:aws:iam::123456789012:role/github-terraform`
+
+## GitHub Actions (Deploy)
+
+This repo includes a manual workflow to build and deploy the frontend:
+`.github/workflows/frontend-deploy.yml`.
+
+Workflow inputs:
+- `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
+- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
+- `role_arn`: IAM role to assume via OIDC
+- `api_url`: value for `VITE_API_URL` during build (default set in workflow)
+
+Behavior:
+- Builds the frontend
+- Uploads to the configured S3 bucket
+- Invalidates CloudFront cache
