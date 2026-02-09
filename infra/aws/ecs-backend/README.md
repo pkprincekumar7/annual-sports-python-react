@@ -59,7 +59,6 @@ Update `dev.tfvars`:
 - Optional deployment behavior: `force_new_deployment`
 - Optional email config: `email_provider`, `gmail_user`, `sendgrid_user`,
   `smtp_host`, `smtp_user`, `smtp_port`, `smtp_secure`, `email_from`, `email_from_name`
-- Secrets bootstrap (sample value): `redis_auth_token_bootstrap`
 - Optional branding: `app_name`
 - Optional Redis settings: `redis_node_type`, `redis_num_cache_nodes`,
   `redis_transit_encryption_enabled`, `redis_at_rest_encryption_enabled`,
@@ -170,36 +169,73 @@ for service in \
 done
 ```
 
-### 5) Create Redis Secret (Target Apply) and Populate Value
+### 5) Create Secrets (Target Apply) and Populate Values
 
-Create the Redis Secrets Manager resource with Terraform.
+Create the Secrets Manager resources with Terraform.
 
 ```bash
-terraform apply -target=aws_secretsmanager_secret.redis_auth_token -var-file=dev.tfvars
+terraform apply -target=aws_secretsmanager_secret.jwt_secret \
+  -target=aws_secretsmanager_secret.mongo_uri \
+  -target=aws_secretsmanager_secret.redis_auth_token \
+  -target=aws_secretsmanager_secret.gmail_app_password \
+  -target=aws_secretsmanager_secret.sendgrid_api_key \
+  -target=aws_secretsmanager_secret.resend_api_key \
+  -target=aws_secretsmanager_secret.smtp_password \
+  -var-file=dev.tfvars
 ```
 
-Add the Redis auth token value in AWS Secrets Manager (Console or CLI) before
-applying the full stack if you are not using `redis_auth_token_bootstrap`.
+Add secret values in AWS Secrets Manager (Console or CLI) before applying the
+full stack.
 
-CLI example (replace value):
+CLI examples (replace values):
 
 ```bash
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-jwt" --secret-string "replace-with-strong-secret"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-mongo-uri" --secret-string "mongodb+srv://user:pass@cluster"
 aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-redis-auth-token" --secret-string "replace-with-strong-token"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-gmail-app-password" --secret-string "your-app-password"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-sendgrid-api-key" --secret-string "your-sendgrid-api-key"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-resend-api-key" --secret-string "your-resend-api-key"
+aws secretsmanager put-secret-value --secret-id "${NAME_PREFIX}-smtp-password" --secret-string "your-smtp-password"
 ```
 
 If a secret name was previously deleted and is now scheduled for deletion,
 restore it before running the Terraform target apply:
 
 ```bash
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-jwt"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-mongo-uri"
 aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-redis-auth-token"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-gmail-app-password"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-sendgrid-api-key"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-resend-api-key"
+aws secretsmanager restore-secret --secret-id "${NAME_PREFIX}-smtp-password"
 ```
 
-If the Redis secret already exists and you want Terraform to manage it, import it
+If the secrets already exist and you want Terraform to manage them, import them
 into state before the full apply:
 
 ```bash
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-jwt" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.jwt_secret "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-mongo-uri" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.mongo_uri "$SECRET_ARN"
+
 SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-redis-auth-token" --query 'ARN' --output text)
 terraform import -var-file=dev.tfvars aws_secretsmanager_secret.redis_auth_token "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-gmail-app-password" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.gmail_app_password "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-sendgrid-api-key" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.sendgrid_api_key "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-resend-api-key" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.resend_api_key "$SECRET_ARN"
+
+SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${NAME_PREFIX}-smtp-password" --query 'ARN' --output text)
+terraform import -var-file=dev.tfvars aws_secretsmanager_secret.smtp_password "$SECRET_ARN"
 ```
 
 ### 6) Apply Full Stack
@@ -369,10 +405,6 @@ Required GitHub Environment secrets (per env):
 - `STATE_DDB_TABLE`
 - `STATE_REGION` (optional; defaults to `aws_region`)
 - `TFVARS_ECS_BACKEND` (full tfvars content)
-Note: Redis secret bootstrapping runs only on `apply` (skipped for `plan`/`destroy`) and uses the
-Terraform state to determine the secret name (no hardcoded prefix). The value comes from
-`redis_auth_token_bootstrap` in your tfvars and is only set if the secret has no value.
-Note: `TFVARS_ECS_BACKEND` must be set; the workflow fails fast if it is empty.
 
 Example inputs:
 - `action`: `apply`
@@ -402,5 +434,12 @@ Behavior:
 - Set `route53_zone_id` in tfvars to have Terraform create the API Route 53 record (`api_domain`).
 - Redis is provisioned via ElastiCache with auth + in‑transit encryption; services use a
   `rediss://` URL (password included) automatically via `REDIS_URL`.
+- If you change the Redis auth token value after deployment, follow this rotation flow:
+  update the secret value, run `terraform apply` so ElastiCache picks up the new token,
+  then restart ECS services so tasks use the new value. Changing only the secret can
+  break auth because Redis will still expect the old token until Terraform applies.
+- If you change any other Secrets Manager values (JWT, Mongo URI, email API keys), you do
+  not need `terraform apply`, but you must restart ECS services so tasks pick up the new
+  secret values.
 - Cloud Map service discovery is enabled; it is derived from `env` (for example, `annual-sports.dev.local`).
 - ECS tasks run in private subnets; the ALB is private behind API Gateway.

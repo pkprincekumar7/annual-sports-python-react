@@ -128,7 +128,6 @@ Required GitHub Environment secrets (per env):
 - `STATE_DDB_TABLE`
 - `STATE_REGION` (optional; defaults to `aws_region`)
 - `TFVARS_FRONTEND` (full tfvars content)
-Note: `TFVARS_FRONTEND` must be set; the workflows fail fast if it is empty.
 
 Example inputs:
 - `action`: `apply`
