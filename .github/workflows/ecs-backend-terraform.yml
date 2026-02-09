@@ -85,6 +85,10 @@ jobs:
         env:
           TFVARS_CONTENT: ${{ secrets.TFVARS_ECS_BACKEND }}
         run: |
+          if [ -z "$TFVARS_CONTENT" ]; then
+            echo "TFVARS_ECS_BACKEND is empty or not set."
+            exit 1
+          fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
 
       - name: Terraform init
@@ -93,6 +97,65 @@ jobs:
       - name: Terraform plan
         if: ${{ inputs.action == 'plan' }}
         run: terraform plan -input=false
+
+      - name: Bootstrap Redis secret container
+        if: ${{ inputs.action == 'apply' }}
+        run: |
+          terraform apply \
+            -target=aws_secretsmanager_secret.redis_auth_token \
+            -auto-approve -input=false
+
+      - name: Ensure Redis auth token value
+        if: ${{ inputs.action == 'apply' }}
+        run: |
+          REDIS_BOOTSTRAP_VALUE="$(echo 'var.redis_auth_token_bootstrap' | terraform console -var-file=runtime.auto.tfvars | tr -d '\r' | sed 's/"//g')"
+          export REDIS_BOOTSTRAP_VALUE
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          value = os.environ.get("REDIS_BOOTSTRAP_VALUE", "").strip()
+          if not value:
+            print("redis_auth_token_bootstrap is empty or missing.")
+            sys.exit(1)
+
+          def secret_name(resource):
+            output = subprocess.check_output(
+              ["terraform", "state", "show", "-no-color", resource],
+              text=True,
+            )
+            for line in output.splitlines():
+              line = line.strip()
+              if line.startswith("name"):
+                return line.split("=", 1)[1].strip().strip('"')
+            return ""
+
+          resource = "aws_secretsmanager_secret.redis_auth_token"
+          name = secret_name(resource)
+          if not name:
+            print(f"Failed to determine secret name for {resource}.")
+            sys.exit(1)
+
+          get_cmd = [
+            "aws", "secretsmanager", "get-secret-value",
+            "--secret-id", name,
+            "--query", "SecretString",
+            "--output", "text",
+          ]
+          exists = subprocess.call(get_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+          if exists:
+            print(f"{name}: value already set; skipping.")
+            sys.exit(0)
+
+          put_cmd = [
+            "aws", "secretsmanager", "put-secret-value",
+            "--secret-id", name,
+            "--secret-string", value,
+          ]
+          subprocess.check_call(put_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          print(f"{name}: value set.")
+          PY
 
       - name: Terraform apply
         if: ${{ inputs.action == 'apply' }}
