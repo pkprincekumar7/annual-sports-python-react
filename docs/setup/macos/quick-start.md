@@ -43,8 +43,8 @@ brew services start redis
 
 ```bash
 cd ~/projects
-git clone <your-repo-url> annual-sports-event-full
-cd annual-sports-event-full/new-structure
+git clone <your-repo-url> annual-sports-python-react
+cd annual-sports-python-react
 ```
 
 ## 6) Configure Environment
@@ -87,7 +87,7 @@ Notes for Docker Compose:
 Start each service in its own terminal:
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure/identity-service
+cd ~/projects/annual-sports-python-react/identity-service
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
@@ -104,7 +104,7 @@ Start the remaining services with their ports:
 Start the frontend:
 
 ```bash
-cd ~/projects/annual-sports-event-full/new-structure/frontend
+cd ~/projects/annual-sports-python-react/frontend
 npm install
 npm run dev
 ```

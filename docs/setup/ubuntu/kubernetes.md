@@ -8,7 +8,7 @@ This guide deploys the frontend and multiple FastAPI services on a Kubernetes cl
 - Container registry access (Docker Hub, GHCR, ECR, etc.)
 - Docker login for your registry (required for pushing images)
 
-If you are new to Kubernetes, follow `new-structure/docs/setup/ubuntu/kubernetes-prereqs.md` first.
+If you are new to Kubernetes, follow `docs/setup/ubuntu/kubernetes-prereqs.md` first.
 
 ## 1) Build and Push Images
 
@@ -28,13 +28,13 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "your-registry/annual-sports-${service}:latest" "new-structure/$service"
+  docker build -t "your-registry/annual-sports-${service}:latest" "$service"
   docker push "your-registry/annual-sports-${service}:latest"
 done
 
 docker build -t your-registry/annual-sports-frontend:latest \
   --build-arg VITE_API_URL=/ \
-  new-structure/frontend
+  frontend
 docker push your-registry/annual-sports-frontend:latest
 ```
 
@@ -71,12 +71,12 @@ kubectl -n annual-sports patch serviceaccount default \
 
 ## 3) Create Secrets and Config
 
-Create a single ConfigMap for all non-secret values (service URLs, shared defaults, and per-service non-secret settings). Keep only sensitive values in Secrets. All Kubernetes manifests live in `new-structure/docs/setup/ubuntu/k8s`.
+Create a single ConfigMap for all non-secret values (service URLs, shared defaults, and per-service non-secret settings). Keep only sensitive values in Secrets. All Kubernetes manifests live in `docs/setup/ubuntu/k8s`.
 
 In Kubernetes, services read configuration from ConfigMaps/Secrets; local `.env` files are not used.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/annual-sports-config.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/annual-sports-config.yaml
 ```
 
 View ConfigMap values:
@@ -119,7 +119,7 @@ kubectl -n annual-sports get secret annual-sports-secrets -o jsonpath='{.data.<k
 Deploy Redis (matches `redis://redis:6379` in the ConfigMap):
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/redis.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/redis.yaml
 ```
 
 Verify Redis:
@@ -137,26 +137,26 @@ kubectl -n annual-sports get svc redis
 If you are using an external MongoDB, update the service `.env` values accordingly.
 
 ```bash
-kubectl apply -f mongodb.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/mongodb.yaml
 ```
 
 ## 6) Deploy Services
 
-Create one Deployment and Service per microservice using the manifests in `new-structure/docs/setup/ubuntu/k8s`:
+Create one Deployment and Service per microservice using the manifests in `docs/setup/ubuntu/k8s`:
 
 Before applying the service manifests, update the `image` values in each YAML file to use your Docker registry (replace `your-registry` with your registry/namespace).
 
 ```bash
-sed -i "s|your-registry|<<registry>>|g" new-structure/docs/setup/ubuntu/k8s/*.yaml
+sed -i "s|your-registry|<<registry>>|g" docs/setup/ubuntu/k8s/*.yaml
 
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/identity-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/enrollment-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/department-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/sports-participation-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/event-configuration-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scheduling-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scoring-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/reporting-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/identity-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/enrollment-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/department-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/sports-participation-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/event-configuration-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scheduling-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scoring-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/reporting-service.yaml
 ```
 
 Verify services:
@@ -184,7 +184,7 @@ either the NGINX gateway, Ingress, or direct port-forwarding (see the Access sec
 Before applying the frontend manifest, update the `image` value to use your Docker registry (replace `your-registry` with your registry/namespace).
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/frontend.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/frontend.yaml
 ```
 
 Verify frontend:
@@ -201,8 +201,8 @@ Use the bundled NGINX config to route API paths to backend services and `/` to t
 This fixes `text/html` responses when the frontend tries to call backend paths on the same host.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/nginx-configmap.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/nginx-gateway.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/nginx-configmap.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/nginx-gateway.yaml
 ```
 
 Verify NGINX:
@@ -238,7 +238,7 @@ any host (useful for direct public IP access). Keep `VITE_API_URL=/` so the
 frontend calls the backend via the same host.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/ingress.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/ingress.yaml
 ```
 
 Verify ingress:
@@ -277,8 +277,8 @@ http://54.89.197.89:31234/
 If a service manifest or the frontend manifest changes, re-apply and verify rollout:
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/identity-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/frontend.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/identity-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/frontend.yaml
 
 kubectl -n annual-sports rollout status deploy/identity-service
 kubectl -n annual-sports rollout status deploy/annual-sports-frontend
@@ -361,7 +361,7 @@ minikube service -n annual-sports annual-sports-frontend --url
 ```
 
 For a systemd-based port-forward that survives SSH disconnects and VM reboots, see:
-`new-structure/docs/setup/ubuntu/kubectl-port-forward-systemd.md`.
+`docs/setup/ubuntu/kubectl-port-forward-systemd.md`.
 
 ## 12) Troubleshooting
 

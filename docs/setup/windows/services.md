@@ -13,14 +13,14 @@ Extract and add the folder to PATH or reference the full path to `nssm.exe`.
 Create `frontend/.env` and set `VITE_API_URL` before building:
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure\frontend
+cd C:\annual-sports-python-react\frontend
 "VITE_API_URL=/" | Out-File -FilePath .env -Encoding ascii
 ```
 
 ## 3) Build the Frontend
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure\frontend
+cd C:\annual-sports-python-react\frontend
 npm install
 npm run build
 ```
@@ -32,7 +32,7 @@ nssm install AnnualSportsFrontend "C:\\Program Files\\nodejs\\npm.cmd" "run prev
 ```
 
 Set:
-- **Startup directory**: `C:\annual-sports-event-full\new-structure\frontend`
+- **Startup directory**: `C:\annual-sports-python-react\frontend`
 - **Environment**: `NODE_ENV=production`, `PORT=5173`
 
 Start the service:
@@ -43,7 +43,7 @@ nssm start AnnualSportsFrontend
 ## 5) Create Backend Services (FastAPI)
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure\identity-service
+cd C:\annual-sports-python-react\identity-service
 pip install -r requirements.txt
 ```
 
@@ -60,7 +60,7 @@ nssm install AnnualSportsIdentity "C:\\Path\\To\\python.exe" "-m uvicorn main:ap
 ```
 
 Set:
-- **Startup directory**: `C:\annual-sports-event-full\new-structure\identity-service`
+- **Startup directory**: `C:\annual-sports-python-react\identity-service`
 
 Start the service:
 ```powershell

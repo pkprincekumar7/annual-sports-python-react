@@ -34,6 +34,13 @@
         { "name": "JWT_SECRET", "valueFrom": "${JWT_SECRET_ARN}" },
         { "name": "MONGODB_URI", "valueFrom": "${MONGO_URI_SECRET_ARN}" }
       ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://localhost:8004/health > /dev/null"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

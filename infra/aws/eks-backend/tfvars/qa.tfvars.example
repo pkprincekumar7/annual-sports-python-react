@@ -1,0 +1,29 @@
+# Example values for qa
+aws_region      = "us-east-1"
+aws_account_id  = "123456789012"
+env             = "qa"
+vpc_cidr        = "10.20.0.0/16"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets      = ["10.20.1.0/24", "10.20.2.0/24"]
+private_subnets     = ["10.20.11.0/24", "10.20.12.0/24"]
+
+api_domain = "sports-qa-api.your-domain.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+
+email_provider = "gmail"
+gmail_user = "your-email@gmail.com"
+email_from = "no-reply@your-domain.com"
+
+# Optional KEDA scaling (enable after ALB target groups exist)
+# enable_keda_alb_scaling = true
+# alb_target_group_arn_suffixes = {
+#   "identity-service"             = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "enrollment-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "department-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "sports-participation-service" = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "event-configuration-service"  = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "scheduling-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "scoring-service"              = "targetgroup/xxxx/xxxxxxxxxxxx"
+#   "reporting-service"            = "targetgroup/xxxx/xxxxxxxxxxxx"
+# }

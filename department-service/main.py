@@ -8,7 +8,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from app.auth import _ResponseException
 from app.config import get_settings
@@ -125,6 +125,13 @@ async def registration_deadline_middleware(request: Request, call_next):
         response = await check_registration_deadline(request)
         if response is not None:
             return response
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def preflight_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return Response(status_code=200)
     return await call_next(request)
 
 

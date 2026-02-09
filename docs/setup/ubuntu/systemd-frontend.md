@@ -7,14 +7,14 @@ Runs the production frontend using Vite preview. Use Nginx for HTTPS and standar
 Create `frontend/.env` and set `VITE_API_URL` before building:
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/frontend
+cd /var/www/annual-sports-python-react/frontend
 printf "VITE_API_URL=/\n" > .env
 ```
 
 ## 2) Build the Frontend
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/frontend
+cd /var/www/annual-sports-python-react/frontend
 npm install
 npm run build
 ```
@@ -36,7 +36,7 @@ After=network.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/var/www/annual-sports-event-full/new-structure/frontend
+WorkingDirectory=/var/www/annual-sports-python-react/frontend
 Environment=NODE_ENV=production
 Environment=PORT=5173
 ExecStart=/usr/bin/npm run preview
@@ -70,7 +70,7 @@ sudo journalctl -u annual-sports-frontend -f
 ## 6) Restart After Updates
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/frontend
+cd /var/www/annual-sports-python-react/frontend
 npm install
 npm run build
 sudo systemctl restart annual-sports-frontend

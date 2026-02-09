@@ -2,7 +2,7 @@
 
 Terraform for AKS is scaffolded here:
 
-`new-structure/infra/azure/aks`
+`infra/azure/aks`
 
 ## Prerequisites
 - Terraform 1.13+
@@ -19,7 +19,7 @@ copying from the matching example file. Update values before `terraform plan`
 and `terraform apply`.
 
 ```bash
-cd new-structure/infra/azure/aks
+cd infra/azure/aks
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars

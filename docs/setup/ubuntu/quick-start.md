@@ -48,9 +48,9 @@ sudo systemctl start redis-server
 
 ```bash
 cd /var/www
-sudo git clone <your-repo-url> annual-sports-event-full
-sudo chown -R $USER:$USER annual-sports-event-full
-cd annual-sports-event-full/new-structure
+sudo git clone <your-repo-url> annual-sports-python-react
+sudo chown -R $USER:$USER annual-sports-python-react
+cd annual-sports-python-react
 ```
 
 ## 5) Configure Environment
@@ -93,7 +93,7 @@ Notes for Docker Compose:
 Start each service in its own terminal:
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/identity-service
+cd /var/www/annual-sports-python-react/identity-service
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
@@ -110,7 +110,7 @@ Start the remaining services with their ports:
 Start the frontend:
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/frontend
+cd /var/www/annual-sports-python-react/frontend
 npm install
 npm run dev
 ```

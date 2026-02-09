@@ -26,12 +26,12 @@ gcloud config set compute/zone us-central1-a
 
 Terraform for GKE lives in:
 
-`new-structure/infra/gcp/gke`
+`infra/gcp/gke`
 
 Quick start:
 
 ```bash
-cd new-structure/infra/gcp/gke
+cd infra/gcp/gke
 terraform init -backend-config=hcl/backend-dev.hcl
 cp tfvars/dev.tfvars.example dev.tfvars
 terraform plan -var-file=dev.tfvars
@@ -73,7 +73,7 @@ for service in \
   scheduling-service \
   scoring-service \
   reporting-service; do
-  docker build -t "annual-sports-${service}:latest" "new-structure/$service"
+  docker build -t "annual-sports-${service}:latest" "$service"
   docker tag "annual-sports-${service}:latest" \
     "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-${service}:latest"
   docker push "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-${service}:latest"
@@ -81,7 +81,7 @@ done
 
 docker build -t annual-sports-frontend:latest \
   --build-arg VITE_API_URL=/ \
-  new-structure/frontend
+  frontend
 docker tag annual-sports-frontend:latest \
   "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-frontend:latest"
 docker push "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/annual-sports-frontend:latest"
@@ -110,10 +110,10 @@ gcloud container clusters get-credentials annual-sports --region us-central1
 kubectl create namespace annual-sports
 ```
 
-Create ConfigMaps for non-secret values and Secrets for sensitive values. Non-secrets should match `x-common-env` in `new-structure/docker-compose.yml`. Secrets (MongoDB URI, JWT secret, email credentials) should come from Secret Manager or Kubernetes Secrets.
+Create ConfigMaps for non-secret values and Secrets for sensitive values. Non-secrets should match `x-common-env` in `docker-compose.yml`. Secrets (MongoDB URI, JWT secret, email credentials) should come from Secret Manager or Kubernetes Secrets.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/annual-sports-config.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/annual-sports-config.yaml
 kubectl -n annual-sports create secret generic annual-sports-secrets \
   --from-literal=MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>/annual-sports-identity" \
   --from-literal=JWT_SECRET="your-strong-secret"
@@ -128,34 +128,34 @@ kubectl -n annual-sports create secret generic identity-secrets \
 ## 7) Deploy Redis and MongoDB
 
 Redis is required for caching. Use **Memorystore for Redis** in production and set `REDIS_URL` for each service.
-If you want in-cluster Redis for testing, apply `new-structure/docs/setup/ubuntu/k8s/redis.yaml`.
+If you want in-cluster Redis for testing, apply `docs/setup/ubuntu/k8s/redis.yaml`.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/redis.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/redis.yaml
 ```
 
 MongoDB is optional if you use MongoDB Atlas. For in-cluster MongoDB:
 
 ```bash
-kubectl apply -f mongodb.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/mongodb.yaml
 kubectl -n annual-sports rollout status statefulset/mongodb
 ```
 
 ## 8) Deploy Services and Frontend
 
-Create one Deployment/Service per microservice using the manifests in `new-structure/docs/setup/ubuntu/k8s`,
+Create one Deployment/Service per microservice using the manifests in `docs/setup/ubuntu/k8s`,
 then apply the frontend manifest. GKE uses GCE Ingress path routing; do not use the NGINX gateway.
 
 ```bash
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/identity-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/enrollment-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/department-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/sports-participation-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/event-configuration-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scheduling-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/scoring-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/reporting-service.yaml
-kubectl apply -f new-structure/docs/setup/ubuntu/k8s/frontend.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/identity-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/enrollment-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/department-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/sports-participation-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/event-configuration-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scheduling-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/scoring-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/reporting-service.yaml
+kubectl apply -f docs/setup/ubuntu/k8s/frontend.yaml
 
 kubectl -n annual-sports rollout status deploy/identity-service
 kubectl -n annual-sports rollout status deploy/annual-sports-frontend

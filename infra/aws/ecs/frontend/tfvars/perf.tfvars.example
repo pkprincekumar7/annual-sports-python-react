@@ -1,8 +1,0 @@
-aws_region  = "us-east-1"
-bucket_name = "your-frontend-perf-bucket"
-
-domain     = "sports-perf.your-domain.com"
-route53_zone_id = "Z1234567890"
-cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cloudfront-cert-id"
-
-cloudfront_price_class = "PriceClass_100"

@@ -39,8 +39,8 @@ Redis is not officially supported on Windows. Use one of:
 
 ```powershell
 cd C:\
-git clone <your-repo-url> annual-sports-event-full
-cd annual-sports-event-full\new-structure
+git clone <your-repo-url> annual-sports-python-react
+cd annual-sports-python-react
 ```
 
 ## 5) Configure Environment
@@ -84,7 +84,7 @@ Notes for Docker Compose:
 Start each service in its own terminal:
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure\identity-service
+cd C:\annual-sports-python-react\identity-service
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
@@ -101,7 +101,7 @@ Start the remaining services with their ports:
 Start the frontend:
 
 ```powershell
-cd C:\annual-sports-event-full\new-structure\frontend
+cd C:\annual-sports-python-react\frontend
 npm install
 npm run dev
 ```

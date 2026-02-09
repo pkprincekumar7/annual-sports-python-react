@@ -6,12 +6,12 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-DEFAULT_DATABASE_NAME = "annual-sports-scoring"
+DEFAULT_DATABASE_NAME = "as-local-scoring"
 
 
 class Settings(BaseSettings):
     mongodb_uri: str = os.getenv(
-        "MONGODB_URI", "mongodb://localhost:27017/annual-sports-scoring"
+        "MONGODB_URI", "mongodb://localhost:27017/as-local-scoring"
     )
     database_name: Optional[str] = os.getenv("DATABASE_NAME")
     jwt_secret: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")

@@ -10,7 +10,7 @@ Runs the Scoring FastAPI service as a systemd unit.
 ## 2) Configure Environment
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/scoring-service
+cd /var/www/annual-sports-python-react/scoring-service
 cp .env.example .env
 nano .env
 ```
@@ -44,8 +44,8 @@ After=network.target mongod.service redis-server.service
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/var/www/annual-sports-event-full/new-structure/scoring-service
-EnvironmentFile=/var/www/annual-sports-event-full/new-structure/scoring-service/.env
+WorkingDirectory=/var/www/annual-sports-python-react/scoring-service
+EnvironmentFile=/var/www/annual-sports-python-react/scoring-service/.env
 ExecStart=/usr/bin/env uvicorn main:app --host 0.0.0.0 --port 8007
 Restart=always
 RestartSec=10
@@ -77,7 +77,7 @@ sudo journalctl -u annual-sports-scoring -f
 ## 7) Restart After Updates
 
 ```bash
-cd /var/www/annual-sports-event-full/new-structure/scoring-service
+cd /var/www/annual-sports-python-react/scoring-service
 pip install -r requirements.txt
 sudo systemctl restart annual-sports-scoring
 ```
