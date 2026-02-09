@@ -278,6 +278,18 @@ variable "force_new_deployment" {
   description = "Force new ECS deployment on every apply."
 }
 
+variable "deployment_minimum_healthy_percent" {
+  type        = number
+  default     = 100
+  description = "Minimum healthy percent during ECS deployments."
+}
+
+variable "deployment_maximum_percent" {
+  type        = number
+  default     = 200
+  description = "Maximum percent during ECS deployments."
+}
+
 variable "autoscale_max" {
   type        = number
   default     = 4
@@ -444,12 +456,6 @@ variable "email_from_name" {
   type        = string
   default     = "Sports Event Management"
   description = "Email from display name."
-}
-
-variable "redis_auth_token_bootstrap" {
-  type        = string
-  default     = ""
-  description = "Optional sample Redis auth token used by CI to initialize Secrets Manager when empty."
 }
 
 variable "app_name" {

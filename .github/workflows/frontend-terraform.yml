@@ -85,10 +85,6 @@ jobs:
         env:
           TFVARS_CONTENT: ${{ secrets.TFVARS_FRONTEND }}
         run: |
-          if [ -z "$TFVARS_CONTENT" ]; then
-            echo "TFVARS_FRONTEND is empty or not set."
-            exit 1
-          fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
 
       - name: Terraform init

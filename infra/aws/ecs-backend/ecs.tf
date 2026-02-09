@@ -68,6 +68,8 @@ resource "aws_ecs_service" "services" {
   enable_execute_command = true
   platform_version      = "LATEST"
   force_new_deployment  = var.force_new_deployment
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
 
   deployment_circuit_breaker {
     enable   = true
