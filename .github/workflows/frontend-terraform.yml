@@ -83,7 +83,7 @@ jobs:
 
       - name: Write tfvars
         env:
-          TFVARS_CONTENT: ${{ secrets.TFVARS_CONTENT }}
+          TFVARS_CONTENT: ${{ secrets.TFVARS_FRONTEND }}
         run: |
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
 

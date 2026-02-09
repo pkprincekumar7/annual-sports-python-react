@@ -101,6 +101,19 @@ aws cloudfront get-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --id "<i
 
 ## GitHub Actions (Terraform)
 
+### GitHub Actions Setup Checklist
+
+1) Repo → Settings → Environments → create `dev`, `qa`, `stg`, `perf`, `prod`.
+2) For each environment, add secrets:
+   - `STATE_BUCKET`
+   - `STATE_DDB_TABLE`
+   - `STATE_REGION` (optional; defaults to workflow `aws_region`)
+   - `TFVARS_FRONTEND` (full tfvars content)
+3) Create the IAM OIDC role and note its ARN.
+4) Actions → run:
+   - **Frontend Terraform** (plan/apply/destroy)
+   - **Frontend Deploy** (build/deploy)
+
 This repo includes a manual workflow to run Terraform via GitHub Actions:
 `.github/workflows/frontend-terraform.yml`.
 
@@ -114,7 +127,7 @@ Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
 - `STATE_REGION` (optional; defaults to `aws_region`)
-- `TFVARS_CONTENT` (full tfvars content)
+- `TFVARS_FRONTEND` (full tfvars content)
 
 Example inputs:
 - `action`: `apply`

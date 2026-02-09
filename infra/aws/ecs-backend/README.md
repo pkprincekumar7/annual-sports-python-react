@@ -378,6 +378,19 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 
 ## GitHub Actions (Terraform)
 
+### GitHub Actions Setup Checklist
+
+1) Repo → Settings → Environments → create `dev`, `qa`, `stg`, `perf`, `prod`.
+2) For each environment, add secrets:
+   - `STATE_BUCKET`
+   - `STATE_DDB_TABLE`
+   - `STATE_REGION` (optional; defaults to workflow `aws_region`)
+   - `TFVARS_ECS_BACKEND` (full tfvars content)
+3) Create the IAM OIDC role and note its ARN.
+4) Actions → run:
+   - **ECS Backend Terraform** (plan/apply/destroy)
+   - **ECS Backend Deploy** (build/push/deploy)
+
 This repo includes a manual workflow to run Terraform via GitHub Actions:
 `.github/workflows/ecs-backend-terraform.yml`.
 
@@ -391,7 +404,7 @@ Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
 - `STATE_REGION` (optional; defaults to `aws_region`)
-- `TFVARS_CONTENT` (full tfvars content)
+- `TFVARS_ECS_BACKEND` (full tfvars content)
 
 Example inputs:
 - `action`: `apply`
