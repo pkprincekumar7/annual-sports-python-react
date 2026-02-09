@@ -28,6 +28,9 @@ email_provider = "gmail"
 gmail_user = "your-email@gmail.com"
 email_from = "no-reply@your-domain.com"
 
+# Secrets bootstrap (sample value; only used if Redis secret is empty)
+redis_auth_token_bootstrap = "replace-with-sample-redis-token"
+
 # Observability
 # alarm_sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:alerts"
 
