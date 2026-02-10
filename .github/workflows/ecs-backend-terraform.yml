@@ -82,15 +82,11 @@ jobs:
           EOF
 
       - name: Write tfvars
+        env:
+          TFVARS_CONTENT: ${{ secrets.TFVARS_ECS_BACKEND_US_EAST_1 }}
         run: |
-          case "${{ inputs.aws_region }}" in
-            us-east-1) TFVARS_CONTENT="${{ secrets.TFVARS_ECS_BACKEND_US_EAST_1 }}" ;;
-            eu-west-1) TFVARS_CONTENT="${{ secrets.TFVARS_ECS_BACKEND_EU_WEST_1 }}" ;;
-            ap-southeast-1) TFVARS_CONTENT="${{ secrets.TFVARS_ECS_BACKEND_AP_SOUTHEAST_1 }}" ;;
-            *) echo "Unsupported aws_region: ${{ inputs.aws_region }}"; exit 1 ;;
-          esac
           if [ -z "$TFVARS_CONTENT" ]; then
-            echo "Region-specific TFVARS_ECS_BACKEND is empty or not set."
+            echo "TFVARS_ECS_BACKEND_US_EAST_1 is empty or not set."
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
