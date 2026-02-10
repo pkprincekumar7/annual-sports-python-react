@@ -35,10 +35,6 @@ on:
       role_arn:
         description: "AWS IAM role to assume via OIDC"
         required: true
-      force_unlock_id:
-        description: "Optional Terraform state lock ID to force-unlock"
-        required: false
-
 permissions:
   id-token: write
   contents: read
@@ -96,11 +92,6 @@ jobs:
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl
-
-      - name: Terraform force-unlock (temporary)
-        if: ${{ inputs.force_unlock_id != '' }}
-        run: |
-          terraform force-unlock -force "${{ inputs.force_unlock_id }}"
 
       - name: Terraform plan
         if: ${{ inputs.action == 'plan' }}
