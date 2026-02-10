@@ -99,7 +99,8 @@ jobs:
 
       - name: Terraform force-unlock (temporary)
         if: ${{ inputs.force_unlock_id != '' }}
-        run: terraform force-unlock "${{ inputs.force_unlock_id }}"
+        run: |
+          terraform force-unlock -input=false "${{ inputs.force_unlock_id }}"
 
       - name: Terraform plan
         if: ${{ inputs.action == 'plan' }}
