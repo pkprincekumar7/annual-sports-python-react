@@ -83,10 +83,10 @@ jobs:
 
       - name: Write tfvars
         env:
-          TFVARS_CONTENT: ${{ secrets.TFVARS_ECS_BACKEND_US_EAST_1 }}
+          TFVARS_CONTENT: ${{ inputs.aws_region == 'us-east-1' && secrets.TFVARS_ECS_BACKEND_US_EAST_1 || inputs.aws_region == 'eu-west-1' && secrets.TFVARS_ECS_BACKEND_EU_WEST_1 || inputs.aws_region == 'ap-southeast-1' && secrets.TFVARS_ECS_BACKEND_AP_SOUTHEAST_1 || '' }}
         run: |
           if [ -z "$TFVARS_CONTENT" ]; then
-            echo "TFVARS_ECS_BACKEND_US_EAST_1 is empty or not set."
+            echo "Region-specific TFVARS_ECS_BACKEND is empty or not set."
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
