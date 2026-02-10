@@ -351,7 +351,9 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
    - `STATE_BUCKET`
    - `STATE_DDB_TABLE`
    - `STATE_REGION` (optional; defaults to workflow `aws_region`)
-   - `TFVARS_ECS_BACKEND` (full tfvars content)
+   - `TFVARS_ECS_BACKEND_US_EAST_1`
+   - `TFVARS_ECS_BACKEND_EU_WEST_1`
+   - `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
 3) Create the IAM OIDC role and note its ARN.
 4) Actions → run:
    - **ECS Backend Terraform** (plan/apply/destroy)
@@ -370,7 +372,9 @@ Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
 - `STATE_REGION` (optional; defaults to `aws_region`)
-- `TFVARS_ECS_BACKEND` (full tfvars content)
+- `TFVARS_ECS_BACKEND_US_EAST_1`
+- `TFVARS_ECS_BACKEND_EU_WEST_1`
+- `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
 Note: Redis secret bootstrapping runs only on `apply` (skipped for `plan`/`destroy`) and uses the
 Terraform state to determine the secret name (no hardcoded prefix). The value comes from
 `redis_auth_token_bootstrap` in your tfvars and is only set if the secret has no value.
