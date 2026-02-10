@@ -95,6 +95,12 @@ jobs:
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
 
+      - name: Debug tfvars content (temporary)
+        run: |
+          echo "----- runtime.auto.tfvars -----"
+          cat runtime.auto.tfvars
+          echo "--------------------------------"
+
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl
 
