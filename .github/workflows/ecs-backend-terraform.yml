@@ -101,29 +101,17 @@ jobs:
       - name: Bootstrap Redis secret container
         if: ${{ inputs.action == 'apply' }}
         run: |
-          REDIS_TRANSIT_ENABLED="$(echo 'var.redis_transit_encryption_enabled' | terraform console -var-file=runtime.auto.tfvars | tr -d '\r' | sed 's/"//g')"
-          if [ "$REDIS_TRANSIT_ENABLED" != "true" ]; then
-            echo "Redis transit encryption disabled; skipping secret bootstrap."
-            exit 0
-          fi
           terraform apply -target=aws_secretsmanager_secret.redis_auth_token -auto-approve -input=false
 
       - name: Ensure Redis auth token value
         if: ${{ inputs.action == 'apply' }}
         run: |
-          REDIS_TRANSIT_ENABLED="$(echo 'var.redis_transit_encryption_enabled' | terraform console -var-file=runtime.auto.tfvars | tr -d '\r' | sed 's/"//g')"
-          REDIS_BOOTSTRAP_VALUE="$(echo 'var.redis_auth_token_bootstrap' | terraform console -var-file=runtime.auto.tfvars | tr -d '\r' | sed 's/"//g')"
-          export REDIS_TRANSIT_ENABLED
+          REDIS_BOOTSTRAP_VALUE="$(awk -F= '/^redis_auth_token_bootstrap/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
           export REDIS_BOOTSTRAP_VALUE
           python3 - <<'PY'
           import os
           import subprocess
           import sys
-
-          transit_enabled = os.environ.get("REDIS_TRANSIT_ENABLED", "").strip().lower() in {"true", "1", "yes"}
-          if not transit_enabled:
-            print("Redis transit encryption disabled; skipping auth token bootstrap.")
-            sys.exit(0)
 
           def secret_name(resource):
             output = subprocess.check_output(
