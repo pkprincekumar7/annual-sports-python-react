@@ -53,6 +53,7 @@ env:
 jobs:
   restart:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
     steps:
       - name: Validate ROLE_ARN secret
         env:

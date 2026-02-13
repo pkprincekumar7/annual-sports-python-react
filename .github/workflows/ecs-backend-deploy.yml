@@ -53,6 +53,7 @@ env:
 jobs:
   build_push:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
     outputs:
       name_prefix: ${{ steps.vars.outputs.name_prefix }}
       cluster_name: ${{ steps.vars.outputs.cluster_name }}
@@ -115,6 +116,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
     needs: build_push
     steps:
       - name: Validate ROLE_ARN secret
