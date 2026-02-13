@@ -60,6 +60,7 @@ jobs:
       name_prefix: ${{ steps.vars.outputs.name_prefix }}
       cluster_name: ${{ steps.vars.outputs.cluster_name }}
       image_tag: ${{ steps.vars.outputs.image_tag }}
+      service: ${{ steps.vars.outputs.service }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
