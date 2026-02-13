@@ -65,8 +65,8 @@ NAME_PREFIX=as-dev
 aws ecr create-repository --repository-name ${NAME_PREFIX}-identity-service
 aws ecr create-repository --repository-name ${NAME_PREFIX}-enrollment-service
 aws ecr create-repository --repository-name ${NAME_PREFIX}-department-service
-aws ecr create-repository --repository-name ${NAME_PREFIX}-sports-participation-service
-aws ecr create-repository --repository-name ${NAME_PREFIX}-event-configuration-service
+aws ecr create-repository --repository-name ${NAME_PREFIX}-sports-part-service
+aws ecr create-repository --repository-name ${NAME_PREFIX}-event-config-service
 aws ecr create-repository --repository-name ${NAME_PREFIX}-scheduling-service
 aws ecr create-repository --repository-name ${NAME_PREFIX}-scoring-service
 aws ecr create-repository --repository-name ${NAME_PREFIX}-reporting-service
@@ -102,8 +102,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -200,12 +200,12 @@ DEPARTMENT_SD_ARN=$(aws servicediscovery create-service \
   --name department-service \
   --dns-config "NamespaceId=$NAMESPACE_ID,DnsRecords=[{Type=A,TTL=60}]" \
   --query 'Service.Arn' --output text)
-SPORTS_PARTICIPATION_SD_ARN=$(aws servicediscovery create-service \
-  --name sports-participation-service \
+SPORTS_PART_SD_ARN=$(aws servicediscovery create-service \
+  --name sports-part-service \
   --dns-config "NamespaceId=$NAMESPACE_ID,DnsRecords=[{Type=A,TTL=60}]" \
   --query 'Service.Arn' --output text)
-EVENT_CONFIGURATION_SD_ARN=$(aws servicediscovery create-service \
-  --name event-configuration-service \
+EVENT_CONFIG_SD_ARN=$(aws servicediscovery create-service \
+  --name event-config-service \
   --dns-config "NamespaceId=$NAMESPACE_ID,DnsRecords=[{Type=A,TTL=60}]" \
   --query 'Service.Arn' --output text)
 SCHEDULING_SD_ARN=$(aws servicediscovery create-service \
@@ -277,8 +277,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -297,8 +297,8 @@ for name in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -429,8 +429,8 @@ CLI example (register all task definitions):
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/identity-service.json
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/enrollment-service.json
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/department-service.json
-aws ecs register-task-definition --cli-input-json file://task-defs/rendered/sports-participation-service.json
-aws ecs register-task-definition --cli-input-json file://task-defs/rendered/event-configuration-service.json
+aws ecs register-task-definition --cli-input-json file://task-defs/rendered/sports-part-service.json
+aws ecs register-task-definition --cli-input-json file://task-defs/rendered/event-config-service.json
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/scheduling-service.json
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/scoring-service.json
 aws ecs register-task-definition --cli-input-json file://task-defs/rendered/reporting-service.json
@@ -621,23 +621,23 @@ aws ecs create-service \
 
 aws ecs create-service \
   --cluster "$CLUSTER_NAME" \
-  --service-name "${NAME_PREFIX}-sports-participation-service" \
-  --task-definition "${NAME_PREFIX}-sports-participation-service" \
+  --service-name "${NAME_PREFIX}-sports-part-service" \
+  --task-definition "${NAME_PREFIX}-sports-part-service" \
   --desired-count 1 \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[$PRIV_SUBNET_A,$PRIV_SUBNET_B],securityGroups=[$ECS_SG_ID],assignPublicIp=DISABLED}" \
-  --load-balancers "targetGroupArn=$SPORTS_PARTICIPATION_TG_ARN,containerName=sports-participation-service,containerPort=8004" \
-  --service-registries "registryArn=$SPORTS_PARTICIPATION_SD_ARN"
+  --load-balancers "targetGroupArn=$SPORTS_PARTICIPATION_TG_ARN,containerName=sports-part-service,containerPort=8004" \
+  --service-registries "registryArn=$SPORTS_PART_SD_ARN"
 
 aws ecs create-service \
   --cluster "$CLUSTER_NAME" \
-  --service-name "${NAME_PREFIX}-event-configuration-service" \
-  --task-definition "${NAME_PREFIX}-event-configuration-service" \
+  --service-name "${NAME_PREFIX}-event-config-service" \
+  --task-definition "${NAME_PREFIX}-event-config-service" \
   --desired-count 1 \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[$PRIV_SUBNET_A,$PRIV_SUBNET_B],securityGroups=[$ECS_SG_ID],assignPublicIp=DISABLED}" \
-  --load-balancers "targetGroupArn=$EVENT_CONFIGURATION_TG_ARN,containerName=event-configuration-service,containerPort=8005" \
-  --service-registries "registryArn=$EVENT_CONFIGURATION_SD_ARN"
+  --load-balancers "targetGroupArn=$EVENT_CONFIGURATION_TG_ARN,containerName=event-config-service,containerPort=8005" \
+  --service-registries "registryArn=$EVENT_CONFIG_SD_ARN"
 
 aws ecs create-service \
   --cluster "$CLUSTER_NAME" \
@@ -729,8 +729,8 @@ Run the following steps in order to avoid dependency errors.
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-identity-service" --force
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-enrollment-service" --force
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-department-service" --force
-aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-sports-participation-service" --force
-aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-event-configuration-service" --force
+aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-sports-part-service" --force
+aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-event-config-service" --force
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-scheduling-service" --force
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-scoring-service" --force
 aws ecs delete-service --cluster "$CLUSTER_NAME" --service "${NAME_PREFIX}-reporting-service" --force
@@ -739,8 +739,8 @@ aws ecs wait services-inactive --cluster "$CLUSTER_NAME" --services \
   "${NAME_PREFIX}-identity-service" \
   "${NAME_PREFIX}-enrollment-service" \
   "${NAME_PREFIX}-department-service" \
-  "${NAME_PREFIX}-sports-participation-service" \
-  "${NAME_PREFIX}-event-configuration-service" \
+  "${NAME_PREFIX}-sports-part-service" \
+  "${NAME_PREFIX}-event-config-service" \
   "${NAME_PREFIX}-scheduling-service" \
   "${NAME_PREFIX}-scoring-service" \
   "${NAME_PREFIX}-reporting-service"
@@ -753,8 +753,8 @@ for family in \
   "${NAME_PREFIX}-identity-service" \
   "${NAME_PREFIX}-enrollment-service" \
   "${NAME_PREFIX}-department-service" \
-  "${NAME_PREFIX}-sports-participation-service" \
-  "${NAME_PREFIX}-event-configuration-service" \
+  "${NAME_PREFIX}-sports-part-service" \
+  "${NAME_PREFIX}-event-config-service" \
   "${NAME_PREFIX}-scheduling-service" \
   "${NAME_PREFIX}-scoring-service" \
   "${NAME_PREFIX}-reporting-service"; do
@@ -855,8 +855,8 @@ for name in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -904,8 +904,8 @@ aws ec2 delete-vpc --vpc-id "$VPC_ID"
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-identity-service --force
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-enrollment-service --force
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-department-service --force
-aws ecr delete-repository --repository-name ${NAME_PREFIX}-sports-participation-service --force
-aws ecr delete-repository --repository-name ${NAME_PREFIX}-event-configuration-service --force
+aws ecr delete-repository --repository-name ${NAME_PREFIX}-sports-part-service --force
+aws ecr delete-repository --repository-name ${NAME_PREFIX}-event-config-service --force
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-scheduling-service --force
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-scoring-service --force
 aws ecr delete-repository --repository-name ${NAME_PREFIX}-reporting-service --force

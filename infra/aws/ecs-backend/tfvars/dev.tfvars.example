@@ -3,6 +3,7 @@
 aws_region     = "us-east-1"
 aws_account_id = "123456789012"
 env            = "dev"
+app_prefix     = "as"
 
 # Networking
 vpc_cidr = "10.10.0.0/16"
@@ -19,6 +20,9 @@ cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate
 # Logging buckets
 alb_access_logs_bucket_name = "your-alb-logs-bucket"
 cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
+
+# App S3 bucket (read/write for all services)
+app_s3_bucket_name = "your-app-bucket"
 
 # CORS
 apigw_cors_allowed_origins = ["https://sports-dev.your-domain.com"]
@@ -37,3 +41,79 @@ redis_auth_token_bootstrap = "replace-with-sample-redis-token"
 # Optional per-service sizing
 # service_cpu_map = { "identity-service" = 512 }
 # service_memory_map = { "identity-service" = 1024 }
+
+# Services (required)
+services = {
+  "identity-service" = {
+    port                 = 8001
+    health_path          = "/health"
+    tg_suffix            = "id"
+    redis_db_index       = 0
+    db_suffix            = "identity"
+    url_env_name         = "IDENTITY_URL"
+    path_patterns        = ["/identities*"]
+  }
+  "enrollment-service" = {
+    port                 = 8002
+    health_path          = "/health"
+    tg_suffix            = "enr"
+    redis_db_index       = 1
+    db_suffix            = "enrollment"
+    url_env_name         = "ENROLLMENT_URL"
+    path_patterns        = ["/enrollments*"]
+  }
+  "department-service" = {
+    port                 = 8003
+    health_path          = "/health"
+    tg_suffix            = "dep"
+    redis_db_index       = 2
+    db_suffix            = "department"
+    url_env_name         = "DEPARTMENT_URL"
+    path_patterns        = ["/departments*"]
+  }
+  "sports-part-service" = {
+    port                 = 8004
+    health_path          = "/health"
+    tg_suffix            = "sp"
+    redis_db_index       = 3
+    db_suffix            = "sports-part"
+    url_env_name         = "SPORTS_PARTICIPATION_URL"
+    path_patterns        = ["/sports-participations*", "/sports-parts*"]
+  }
+  "event-config-service" = {
+    port                 = 8005
+    health_path          = "/health"
+    tg_suffix            = "evt"
+    redis_db_index       = 4
+    db_suffix            = "event-config"
+    url_env_name         = "EVENT_CONFIGURATION_URL"
+    path_patterns        = ["/event-configurations*", "/event-configs*"]
+  }
+  "scheduling-service" = {
+    port                 = 8006
+    health_path          = "/health"
+    tg_suffix            = "sch"
+    redis_db_index       = 5
+    db_suffix            = "scheduling"
+    url_env_name         = "SCHEDULING_URL"
+    path_patterns        = ["/schedulings*"]
+  }
+  "scoring-service" = {
+    port                 = 8007
+    health_path          = "/health"
+    tg_suffix            = "sco"
+    redis_db_index       = 6
+    db_suffix            = "scoring"
+    url_env_name         = "SCORING_URL"
+    path_patterns        = ["/scorings*"]
+  }
+  "reporting-service" = {
+    port                 = 8008
+    health_path          = "/health"
+    tg_suffix            = "rep"
+    redis_db_index       = 7
+    db_suffix            = "reporting"
+    url_env_name         = "REPORTING_URL"
+    path_patterns        = ["/reportings*"]
+  }
+}

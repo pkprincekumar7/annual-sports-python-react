@@ -82,7 +82,7 @@ locals {
 resource "aws_lb_listener_rule" "service_paths" {
   for_each     = local.services
   listener_arn = local.listener_arn
-  priority     = 100 + index(keys(local.services), each.key)
+  priority     = 100 + index(local.sorted_service_keys, each.key)
 
   action {
     type             = "forward"
@@ -91,16 +91,7 @@ resource "aws_lb_listener_rule" "service_paths" {
 
   condition {
     path_pattern {
-      values = [
-        each.key == "identity-service" ? "/identities*" :
-        each.key == "enrollment-service" ? "/enrollments*" :
-        each.key == "department-service" ? "/departments*" :
-        each.key == "sports-participation-service" ? "/sports-participations*" :
-        each.key == "event-configuration-service" ? "/event-configurations*" :
-        each.key == "scheduling-service" ? "/schedulings*" :
-        each.key == "scoring-service" ? "/scorings*" :
-        "/reportings*"
-      ]
+      values = each.value.path_patterns
     }
   }
 }

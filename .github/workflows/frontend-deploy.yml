@@ -1,4 +1,5 @@
 name: Frontend Deploy
+run-name: Frontend Deploy (${{ inputs.env }}, ${{ inputs.api_url }})
 
 on:
   workflow_dispatch:
@@ -14,9 +15,6 @@ on:
           - stg
           - perf
           - prod
-      role_arn:
-        description: "AWS IAM role to assume via OIDC"
-        required: true
       api_url:
         description: "VITE_API_URL for frontend build"
         required: true
@@ -41,10 +39,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate ROLE_ARN secret
+        env:
+          ROLE_ARN: ${{ secrets.ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE_ARN" ]; then
+            echo "ROLE_ARN secret is empty or not set for this environment."
+            exit 1
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.role_arn }}
+          role-to-assume: ${{ secrets.ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Setup Terraform
@@ -54,13 +61,24 @@ jobs:
         env:
           STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
           STATE_TABLE: ${{ secrets.STATE_DDB_TABLE }}
-          STATE_REGION: ${{ secrets.STATE_REGION }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
-          BACKEND_REGION="${STATE_REGION:-us-east-1}"
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "STATE_BUCKET is empty or not set."
+            exit 1
+          fi
+          if [ -z "$STATE_TABLE" ]; then
+            echo "STATE_DDB_TABLE is empty or not set."
+            exit 1
+          fi
+          if [ -z "$APP_PREFIX" ]; then
+            echo "APP_PREFIX is empty or not set."
+            exit 1
+          fi
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
-          key            = "terraform-state-files/annual-sports/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
-          region         = "${BACKEND_REGION}"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
+          region         = "us-east-1"
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
           EOF

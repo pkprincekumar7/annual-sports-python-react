@@ -107,12 +107,26 @@ aws cloudfront get-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --id "<i
 2) For each environment, add secrets:
    - `STATE_BUCKET`
    - `STATE_DDB_TABLE`
-   - `STATE_REGION` (optional; defaults to workflow `aws_region`)
+   - `APP_PREFIX`
    - `TFVARS_FRONTEND` (full tfvars content)
 3) Create the IAM OIDC role and note its ARN.
 4) Actions → run:
    - **Frontend Terraform** (plan/apply/destroy)
    - **Frontend Deploy** (build/deploy)
+
+#### Create IAM OIDC Role (AWS Console)
+1) AWS Console → IAM → Identity providers → **Add provider**
+   - Provider type: **OpenID Connect**
+   - Provider URL: `https://token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+2) IAM → Roles → **Create role**
+   - Trusted entity type: **Web identity**
+   - Identity provider: `token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+   - Optional: add a condition to restrict to your repo, e.g.
+     `token.actions.githubusercontent.com:sub = repo:<owner>/<repo>:*`
+3) Attach required permissions (least-privilege or `AdministratorAccess` for setup).
+4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `role_arn`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
 `.github/workflows/frontend-terraform.yml`.
@@ -120,20 +134,18 @@ This repo includes a manual workflow to run Terraform via GitHub Actions:
 Workflow inputs:
 - `action`: `plan`, `apply`, or `destroy`
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
-- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 - `role_arn`: IAM role to assume via OIDC
 
 Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
-- `STATE_REGION` (optional; defaults to `aws_region`)
+- `APP_PREFIX`
 - `TFVARS_FRONTEND` (full tfvars content)
 Note: `TFVARS_FRONTEND` must be set; the workflows fail fast if it is empty.
 
 Example inputs:
 - `action`: `apply`
 - `env`: `dev`
-- `aws_region`: `us-east-1`
 - `role_arn`: `arn:aws:iam::123456789012:role/github-terraform`
 
 ## GitHub Actions (Deploy)
@@ -143,7 +155,6 @@ This repo includes a manual workflow to build and deploy the frontend:
 
 Workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
-- `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 - `role_arn`: IAM role to assume via OIDC
 - `api_url`: value for `VITE_API_URL` during build (default set in workflow)
 

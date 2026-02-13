@@ -159,7 +159,7 @@ Example (AWS CLI):
 ```bash
 LB_ARN=$(aws elbv2 describe-load-balancers --names "as-dev-alb" --query 'LoadBalancers[0].LoadBalancerArn' --output text)
 
-for svc in identity-service enrollment-service department-service sports-participation-service event-configuration-service scheduling-service scoring-service reporting-service; do
+for svc in identity-service enrollment-service department-service sports-part-service event-config-service scheduling-service scoring-service reporting-service; do
   TG_ARN=$(aws elbv2 describe-target-groups --load-balancer-arn "$LB_ARN" --query "TargetGroups[?contains(TargetGroupName, '$svc')].TargetGroupArn | [0]" --output text)
   TG_ARN_SUFFIX=$(aws elbv2 describe-target-groups --target-group-arns "$TG_ARN" --query 'TargetGroups[0].TargetGroupArn' --output text | sed 's#.*/targetgroup/##')
   echo "$svc = \"$TG_ARN_SUFFIX\""
@@ -174,8 +174,8 @@ alb_target_group_arn_suffixes = {
   "identity-service"             = "targetgroup/xxxx/xxxxxxxxxxxx"
   "enrollment-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
   "department-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
-  "sports-participation-service" = "targetgroup/xxxx/xxxxxxxxxxxx"
-  "event-configuration-service"  = "targetgroup/xxxx/xxxxxxxxxxxx"
+  "sports-part-service"          = "targetgroup/xxxx/xxxxxxxxxxxx"
+  "event-config-service"         = "targetgroup/xxxx/xxxxxxxxxxxx"
   "scheduling-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
   "scoring-service"              = "targetgroup/xxxx/xxxxxxxxxxxx"
   "reporting-service"            = "targetgroup/xxxx/xxxxxxxxxxxx"
