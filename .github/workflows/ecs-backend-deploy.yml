@@ -133,15 +133,15 @@ jobs:
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-          if [ -z "$SERVICE" ]; then
-            echo "SERVICE is empty. Select a service in workflow inputs."
-            exit 1
-          fi
           svc="${NAME_PREFIX}-${SERVICE}"
           CONTAINER_NAME="$SERVICE"
           echo "SERVICE=$SERVICE"
           echo "CLUSTER_NAME=$CLUSTER_NAME"
           echo "svc=$svc"
+          if [ -z "$SERVICE" ]; then
+            echo "SERVICE is empty. Select a service in workflow inputs."
+            exit 1
+          fi
           aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$svc"
           TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$svc" --query 'services[0].taskDefinition' --output text)
           echo "TASK_DEF_ARN=$TASK_DEF_ARN"
