@@ -33,9 +33,6 @@ on:
           - us-east-1
           - eu-west-1
           - ap-southeast-1
-      role_arn:
-        description: "AWS IAM role to assume via OIDC"
-        required: true
 permissions:
   id-token: write
   contents: read
@@ -60,7 +57,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.role_arn }}
+          role-to-assume: ${{ secrets.ROLE_ARN }}
           aws-region: ${{ inputs.aws_region }}
 
       - name: Setup Terraform
