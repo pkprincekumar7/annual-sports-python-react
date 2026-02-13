@@ -441,6 +441,11 @@ Restart workflow behavior:
 
 ## Notes
 - Populate `redis_auth_token_bootstrap` in your environment tfvars (for example, `dev.tfvars`).
+- Redis auth token rotation:
+  1) Update the secret value in AWS Secrets Manager.
+  2) Run `terraform apply` to update the ElastiCache auth token.
+  3) Restart ECS services so tasks pick up the new value.
+- Other Secrets Manager values only require an ECS restart (no Terraform apply).
 - The MongoDB URI secret is shared; each service selects the DB via `DATABASE_NAME`.
 - Set `route53_zone_id` in tfvars to have Terraform create the API Route 53 record (`api_domain`).
 - Redis is provisioned via ElastiCache with auth + in‑transit encryption; services use a
