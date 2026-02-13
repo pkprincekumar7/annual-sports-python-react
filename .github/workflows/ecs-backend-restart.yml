@@ -1,4 +1,5 @@
 name: ECS Backend Restart
+run-name: ECS Backend Restart (${{ inputs.env }}, ${{ inputs.aws_region }}, ${{ inputs.service }})
 
 on:
   workflow_dispatch:
@@ -26,18 +27,17 @@ on:
       role_arn:
         description: "AWS IAM role to assume via OIDC"
         required: true
-      services:
+      service:
         description: "Service to restart"
         required: true
-        default: "all"
+        default: "identity-service"
         type: choice
         options:
-          - all
           - identity-service
           - enrollment-service
           - department-service
-          - sports-participation-service
-          - event-configuration-service
+          - sports-part-service
+          - event-config-service
           - scheduling-service
           - scoring-service
           - reporting-service
@@ -47,8 +47,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: ecs-backend-restart-${{ inputs.env }}-${{ inputs.aws_region }}
+  group: ecs-backend-restart-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
   cancel-in-progress: false
+
+env:
+  APP_PREFIX: "as"
 
 jobs:
   restart:
@@ -63,16 +66,10 @@ jobs:
       - name: Restart ECS services
         env:
           AWS_REGION: ${{ inputs.aws_region }}
-          SERVICES: ${{ inputs.services }}
+          SERVICE: ${{ inputs.service }}
         run: |
-          NAME_PREFIX="as-${{ inputs.env }}"
-          CLUSTER_NAME="annual-sports-${{ inputs.env }}"
-          if [ -z "$SERVICES" ] || [ "$SERVICES" = "all" ]; then
-            SERVICES="identity-service,enrollment-service,department-service,sports-participation-service,event-configuration-service,scheduling-service,scoring-service,reporting-service"
-          fi
-          IFS=',' read -r -a SERVICE_LIST <<< "$SERVICES"
-          for short_svc in "${SERVICE_LIST[@]}"; do
-            svc="${NAME_PREFIX}-${short_svc}"
-            aws ecs update-service --cluster "$CLUSTER_NAME" --service "$svc" --force-new-deployment
-          done
-          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services $(printf "%s " "${SERVICE_LIST[@]/#/${NAME_PREFIX}-}")
+          NAME_PREFIX="${APP_PREFIX}-${{ inputs.env }}"
+          CLUSTER_NAME="${APP_PREFIX}-${{ inputs.env }}-cluster"
+          svc="${NAME_PREFIX}-${SERVICE}"
+          aws ecs update-service --cluster "$CLUSTER_NAME" --service "$svc" --force-new-deployment
+          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "${svc}"

@@ -167,8 +167,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -194,8 +194,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -430,8 +430,8 @@ EOF
 for service in \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -452,8 +452,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -480,8 +480,8 @@ data:
   IDENTITY_URL: "http://identity-service:8001"
   ENROLLMENT_URL: "http://enrollment-service:8002"
   DEPARTMENT_URL: "http://department-service:8003"
-  SPORTS_PARTICIPATION_URL: "http://sports-participation-service:8004"
-  EVENT_CONFIGURATION_URL: "http://event-configuration-service:8005"
+  SPORTS_PARTICIPATION_URL: "http://sports-part-service:8004"
+  EVENT_CONFIGURATION_URL: "http://event-config-service:8005"
   SCHEDULING_URL: "http://scheduling-service:8006"
   SCORING_URL: "http://scoring-service:8007"
   REPORTING_URL: "http://reporting-service:8008"
@@ -503,8 +503,8 @@ data:
   IDENTITY_URL: "http://identity-service:8001"
   ENROLLMENT_URL: "http://enrollment-service:8002"
   DEPARTMENT_URL: "http://department-service:8003"
-  SPORTS_PARTICIPATION_URL: "http://sports-participation-service:8004"
-  EVENT_CONFIGURATION_URL: "http://event-configuration-service:8005"
+  SPORTS_PARTICIPATION_URL: "http://sports-part-service:8004"
+  EVENT_CONFIGURATION_URL: "http://event-config-service:8005"
   SCHEDULING_URL: "http://scheduling-service:8006"
   SCORING_URL: "http://scoring-service:8007"
   REPORTING_URL: "http://reporting-service:8008"
@@ -529,16 +529,16 @@ Render and apply ConfigMaps:
 for service in \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
   case $service in
     enrollment-service) DATABASE_NAME=${NAME_PREFIX}-enrollment; REDIS_DB=1 ;;
     department-service) DATABASE_NAME=${NAME_PREFIX}-department; REDIS_DB=2 ;;
-    sports-participation-service) DATABASE_NAME=${NAME_PREFIX}-sports-part; REDIS_DB=3 ;;
-    event-configuration-service) DATABASE_NAME=${NAME_PREFIX}-event-config; REDIS_DB=4 ;;
+    sports-part-service) DATABASE_NAME=${NAME_PREFIX}-sports-part; REDIS_DB=3 ;;
+    event-config-service) DATABASE_NAME=${NAME_PREFIX}-event-config; REDIS_DB=4 ;;
     scheduling-service) DATABASE_NAME=${NAME_PREFIX}-scheduling; REDIS_DB=5 ;;
     scoring-service) DATABASE_NAME=${NAME_PREFIX}-scoring; REDIS_DB=6 ;;
     reporting-service) DATABASE_NAME=${NAME_PREFIX}-reporting; REDIS_DB=7 ;;
@@ -632,8 +632,8 @@ declare -A SERVICE_PORTS=(
   [identity-service]=8001
   [enrollment-service]=8002
   [department-service]=8003
-  [sports-participation-service]=8004
-  [event-configuration-service]=8005
+  [sports-part-service]=8004
+  [event-config-service]=8005
   [scheduling-service]=8006
   [scoring-service]=8007
   [reporting-service]=8008
@@ -701,14 +701,14 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: sports-participation-service
+                name: sports-part-service
                 port:
                   number: 8004
           - path: /event-configurations
             pathType: Prefix
             backend:
               service:
-                name: event-configuration-service
+                name: event-config-service
                 port:
                   number: 8005
           - path: /schedulings

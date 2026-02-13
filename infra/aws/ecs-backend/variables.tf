@@ -12,6 +12,10 @@ variable "env" {
   type        = string
   default     = "dev"
   description = "Environment name used to derive defaults (dev, qa, stg, perf, prod)."
+  validation {
+    condition     = length(var.env) >= 2 && length(var.env) <= 7
+    error_message = "env must be 2-7 characters."
+  }
 }
 
 variable "vpc_cidr" {
@@ -266,6 +270,79 @@ variable "ulimit_nofile_hard" {
   description = "Hard nofile ulimit for containers."
 }
 
+variable "app_s3_bucket_name" {
+  type        = string
+  default     = ""
+  description = "Global app S3 bucket name shared across regions (managed outside this stack)."
+  validation {
+    condition     = var.app_s3_bucket_name != ""
+    error_message = "app_s3_bucket_name must be set."
+  }
+}
+
+variable "app_prefix" {
+  type        = string
+  default     = "as"
+  description = "Short application prefix used in resource names."
+  validation {
+    condition     = length(var.app_prefix) >= 2 && length(var.app_prefix) <= 5
+    error_message = "app_prefix must be 2-5 characters."
+  }
+}
+
+variable "services" {
+  type = map(object({
+    port                = number
+    health_path         = string
+    tg_suffix           = string
+    redis_db_index      = number
+    db_suffix           = string
+    url_env_name        = string
+    path_patterns       = list(string)
+  }))
+  description = "Service definitions (port, health, TG suffix, DB suffix, Redis index, URL env name, path patterns)."
+  validation {
+    condition     = length(var.services) > 0
+    error_message = "services must define at least one service."
+  }
+  validation {
+    condition     = length(distinct([for svc in values(var.services) : svc.port])) == length(var.services)
+    error_message = "services.port must be unique per service."
+  }
+  validation {
+    condition     = length(distinct([for svc in values(var.services) : svc.tg_suffix])) == length(var.services)
+    error_message = "services.tg_suffix must be unique per service."
+  }
+  validation {
+    condition     = length(distinct([for svc in values(var.services) : svc.redis_db_index])) == length(var.services)
+    error_message = "services.redis_db_index must be unique per service."
+  }
+  validation {
+    condition     = length(distinct([for svc in values(var.services) : svc.db_suffix])) == length(var.services)
+    error_message = "services.db_suffix must be unique per service."
+  }
+  validation {
+    condition     = length(distinct([for svc in values(var.services) : svc.url_env_name])) == length(var.services)
+    error_message = "services.url_env_name must be unique per service."
+  }
+  validation {
+    condition     = alltrue([for name, _ in var.services : length(replace(name, "-service", "")) >= 2 && length(replace(name, "-service", "")) <= 17])
+    error_message = "service name (excluding \"-service\") must be 2-17 characters."
+  }
+  validation {
+    condition     = alltrue([for svc in values(var.services) : length(svc.path_patterns) > 0])
+    error_message = "services.path_patterns must contain at least one value per service."
+  }
+  validation {
+    condition     = alltrue([for svc in values(var.services) : length(distinct(svc.path_patterns)) == length(svc.path_patterns)])
+    error_message = "services.path_patterns must be unique within each service."
+  }
+  validation {
+    condition     = alltrue([for svc in values(var.services) : length(var.app_prefix) + 1 + length(var.env) + 1 + length(svc.tg_suffix) <= 32])
+    error_message = "services.tg_suffix is too long for ALB target group name."
+  }
+}
+
 variable "autoscale_min" {
   type        = number
   default     = 1
@@ -384,12 +461,6 @@ variable "admin_reg_number" {
   type        = string
   default     = "admin"
   description = "Admin registration number."
-}
-
-variable "app_env" {
-  type        = string
-  default     = "production"
-  description = "Application environment."
 }
 
 variable "log_level" {

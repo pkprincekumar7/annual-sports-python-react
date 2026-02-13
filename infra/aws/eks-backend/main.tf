@@ -7,8 +7,8 @@ locals {
     "identity-service" = { port = 8001 }
     "enrollment-service" = { port = 8002 }
     "department-service" = { port = 8003 }
-    "sports-participation-service" = { port = 8004 }
-    "event-configuration-service" = { port = 8005 }
+    "sports-part-service" = { port = 8004 }
+    "event-config-service" = { port = 8005 }
     "scheduling-service" = { port = 8006 }
     "scoring-service" = { port = 8007 }
     "reporting-service" = { port = 8008 }
@@ -18,8 +18,8 @@ locals {
     "identity-service"             = 0
     "enrollment-service"           = 1
     "department-service"           = 2
-    "sports-participation-service" = 3
-    "event-configuration-service"  = 4
+    "sports-part-service" = 3
+    "event-config-service"  = 4
     "scheduling-service"           = 5
     "scoring-service"              = 6
     "reporting-service"            = 7
@@ -31,8 +31,8 @@ locals {
     IDENTITY_URL             = "http://identity-service:8001"
     ENROLLMENT_URL           = "http://enrollment-service:8002"
     DEPARTMENT_URL           = "http://department-service:8003"
-    SPORTS_PARTICIPATION_URL = "http://sports-participation-service:8004"
-    EVENT_CONFIGURATION_URL  = "http://event-configuration-service:8005"
+    SPORTS_PARTICIPATION_URL = "http://sports-part-service:8004"
+    EVENT_CONFIGURATION_URL  = "http://event-config-service:8005"
     SCHEDULING_URL           = "http://scheduling-service:8006"
     SCORING_URL              = "http://scoring-service:8007"
     REPORTING_URL            = "http://reporting-service:8008"
@@ -61,8 +61,8 @@ locals {
     "identity-service"             = "${local.name_prefix}-identity"
     "enrollment-service"           = "${local.name_prefix}-enrollment"
     "department-service"           = "${local.name_prefix}-department"
-    "sports-participation-service" = "${local.name_prefix}-sports-part"
-    "event-configuration-service"  = "${local.name_prefix}-event-config"
+    "sports-part-service" = "${local.name_prefix}-sports-part"
+    "event-config-service"  = "${local.name_prefix}-event-config"
     "scheduling-service"           = "${local.name_prefix}-scheduling"
     "scoring-service"              = "${local.name_prefix}-scoring"
     "reporting-service"            = "${local.name_prefix}-reporting"
@@ -150,8 +150,8 @@ locals {
     { path = "/identities", service = "identity-service", port = 8001 },
     { path = "/enrollments", service = "enrollment-service", port = 8002 },
     { path = "/departments", service = "department-service", port = 8003 },
-    { path = "/sports-participations", service = "sports-participation-service", port = 8004 },
-    { path = "/event-configurations", service = "event-configuration-service", port = 8005 },
+    { path = "/sports-participations", service = "sports-part-service", port = 8004 },
+    { path = "/event-configurations", service = "event-config-service", port = 8005 },
     { path = "/schedulings", service = "scheduling-service", port = 8006 },
     { path = "/scorings", service = "scoring-service", port = 8007 },
     { path = "/reportings", service = "reporting-service", port = 8008 }

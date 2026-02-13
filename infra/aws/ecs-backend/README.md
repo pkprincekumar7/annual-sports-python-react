@@ -14,6 +14,8 @@ Before you run Terraform, create the S3 bucket and DynamoDB table manually. The
 environment backend files are committed so everyone shares the same bucket/table.
 Update the `hcl/backend-*.hcl` files with your actual bucket and table names
 before `terraform init`. For multi-region, use a region-specific state key.
+Terraform does not allow variables in backend config files because they are
+loaded during `terraform init` before any variables or tfvars are evaluated.
 
 Recommended bucket/table setup:
 - S3 bucket: versioning enabled, default encryption enabled, public access blocked
@@ -35,10 +37,12 @@ cp tfvars/dev.tfvars.example dev.tfvars
 
 Update `dev.tfvars`:
 - Core: `aws_account_id`, `aws_region`, `env`
+- Core: `app_prefix` (max 5 chars)
 - Networking: `public_subnets`, `private_subnets`, `availability_zones`
 - Domains & certs: `api_domain`, `route53_zone_id`, `acm_certificate_arn`,
   `cloudfront_acm_certificate_arn`
 - Logging buckets: `alb_access_logs_bucket_name`, `cloudfront_logs_bucket_name`
+- App bucket: `app_s3_bucket_name` (global/shared bucket managed outside this stack)
 - CORS: `apigw_cors_allowed_origins`
 - Optional ALB settings: `alb_ssl_policy`, `alb_deletion_protection`,
   `alb_access_logs_enabled`, `alb_access_logs_prefix`
@@ -58,6 +62,7 @@ Update `dev.tfvars`:
 - Per-service sizing: `service_cpu_map`, `service_memory_map`, `ulimit_nofile_soft`, `ulimit_nofile_hard`
 - Optional deployment behavior: `force_new_deployment`,
   `deployment_minimum_healthy_percent`, `deployment_maximum_percent`
+- Service definitions: `services` (map of service configs)
 - Optional email config: `email_provider`, `gmail_user`, `sendgrid_user`,
   `smtp_host`, `smtp_user`, `smtp_port`, `smtp_secure`, `email_from`, `email_from_name`
 - Secrets bootstrap (sample value): `redis_auth_token_bootstrap`
@@ -69,6 +74,9 @@ Update `dev.tfvars`:
 
 Database names are derived automatically using `env` (for example,
 `as-dev-identity`, `as-dev-enrollment`, etc.).
+
+`app_s3_bucket_name` should point to a single global/shared bucket managed in a
+separate stack. This stack only grants ECS task roles access to that bucket.
 
 ### ALB Access Logs Bucket (Manual)
 
@@ -159,8 +167,8 @@ for service in \
   identity-service \
   enrollment-service \
   department-service \
-  sports-participation-service \
-  event-configuration-service \
+  sports-part-service \
+  event-config-service \
   scheduling-service \
   scoring-service \
   reporting-service; do
@@ -261,7 +269,7 @@ to restart (or force a new deployment) before connecting.
 Set variables:
 
 ```bash
-CLUSTER_NAME=<your-cluster-name>
+CLUSTER_NAME=<app_prefix>-<env>-cluster
 SERVICE_NAME=<your-service-name>  # example: ${NAME_PREFIX}-identity-service
 CONTAINER_NAME=<your-container-name> # example: identity-service
 ```
@@ -276,7 +284,7 @@ aws ecs execute-command --cluster "$CLUSTER_NAME" --task "$TASK_ARN" --container
 Run curl from inside the container:
 
 ```bash
-curl -I http://event-configuration-service.${SERVICE_NAMESPACE}:8005/health
+curl -I http://event-config-service.${SERVICE_NAMESPACE}:8005/health
 ```
 
 If `curl` is not installed, install it based on your image base:
@@ -305,14 +313,14 @@ If you reuse the **same tag** (for example, `latest`), you may still need to
 force a new deployment to refresh tasks:
 
 ```bash
-CLUSTER_NAME=<your-cluster-name>
+CLUSTER_NAME=<app_prefix>-<env>-cluster
 NAME_PREFIX=<your-name-prefix>
 for svc in \
   ${NAME_PREFIX}-identity-service \
   ${NAME_PREFIX}-enrollment-service \
   ${NAME_PREFIX}-department-service \
-  ${NAME_PREFIX}-sports-participation-service \
-  ${NAME_PREFIX}-event-configuration-service \
+  ${NAME_PREFIX}-sports-part-service \
+  ${NAME_PREFIX}-event-config-service \
   ${NAME_PREFIX}-scheduling-service \
   ${NAME_PREFIX}-scoring-service \
   ${NAME_PREFIX}-reporting-service; do
@@ -350,7 +358,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 2) For each environment, add secrets:
    - `STATE_BUCKET`
    - `STATE_DDB_TABLE`
-   - `STATE_REGION` (optional; defaults to workflow `aws_region`)
+   - `APP_PREFIX`
    - `TFVARS_ECS_BACKEND_US_EAST_1`
    - `TFVARS_ECS_BACKEND_EU_WEST_1`
    - `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
@@ -358,6 +366,20 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 4) Actions → run:
    - **ECS Backend Terraform** (plan/apply/destroy)
    - **ECS Backend Deploy** (build/push/deploy)
+
+#### Create IAM OIDC Role (AWS Console)
+1) AWS Console → IAM → Identity providers → **Add provider**
+   - Provider type: **OpenID Connect**
+   - Provider URL: `https://token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+2) IAM → Roles → **Create role**
+   - Trusted entity type: **Web identity**
+   - Identity provider: `token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+   - Optional: add a condition to restrict to your repo, e.g.
+     `token.actions.githubusercontent.com:sub = repo:<owner>/<repo>:*`
+3) Attach required permissions (least-privilege or `AdministratorAccess` for setup).
+4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `role_arn`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
 `.github/workflows/ecs-backend-terraform.yml`.
@@ -371,14 +393,14 @@ Workflow inputs:
 Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
-- `STATE_REGION` (optional; defaults to `aws_region`)
+- `APP_PREFIX`
 - `TFVARS_ECS_BACKEND_US_EAST_1`
 - `TFVARS_ECS_BACKEND_EU_WEST_1`
 - `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
 Note: Redis secret bootstrapping runs only on `apply` (skipped for `plan`/`destroy`) and uses the
 Terraform state to determine the secret name (no hardcoded prefix). The value comes from
 `redis_auth_token_bootstrap` in your tfvars and is only set if the secret has no value.
-Note: `TFVARS_ECS_BACKEND` must be set; the workflow fails fast if it is empty.
+Note: the region-specific tfvars secret must be set for the selected `aws_region`.
 
 Example inputs:
 - `action`: `apply`
@@ -393,11 +415,15 @@ This repo includes a manual workflow to build, push, and deploy ECS services:
 It also includes a restart-only workflow:
 `.github/workflows/ecs-backend-restart.yml`.
 
+Note: the deploy/restart workflows use a workflow-level `APP_PREFIX`. If you
+change `app_prefix` in tfvars, update `APP_PREFIX` in those workflows or move it
+to a secret.
+
 Workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
 - `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 - `role_arn`: IAM role to assume via OIDC
-- `services`: `all` or a single service name (dropdown)
+- `service`: a single service name (dropdown)
 
 Behavior:
 - Builds and pushes images with a UTC timestamp tag (`YYYYMMDDHHMMSS`)
@@ -408,10 +434,10 @@ Restart workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
 - `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 - `role_arn`: IAM role to assume via OIDC
-- `services`: `all` or a single service name (dropdown)
+- `service`: a single service name (dropdown)
 
 Restart workflow behavior:
-- Forces a new deployment for selected services without changing task definitions
+- Forces a new deployment for the selected service without changing task definitions
 
 ## Notes
 - Populate `redis_auth_token_bootstrap` in your environment tfvars (for example, `dev.tfvars`).
@@ -419,5 +445,6 @@ Restart workflow behavior:
 - Set `route53_zone_id` in tfvars to have Terraform create the API Route 53 record (`api_domain`).
 - Redis is provisioned via ElastiCache with auth + in‑transit encryption; services use a
   `rediss://` URL (password included) automatically via `REDIS_URL`.
-- Cloud Map service discovery is enabled; it is derived from `env` (for example, `annual-sports.dev.local`).
+- Cloud Map service discovery is enabled; it is derived from `app_prefix` and `env`
+  (for example, `as.dev.local`).
 - ECS tasks run in private subnets; the ALB is private behind API Gateway.

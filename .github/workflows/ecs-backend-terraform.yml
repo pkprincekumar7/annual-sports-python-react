@@ -1,4 +1,5 @@
 name: ECS Backend Terraform
+run-name: ECS Backend Terraform (${{ inputs.action }}, ${{ inputs.env }}, ${{ inputs.aws_region }})
 
 on:
   workflow_dispatch:
@@ -69,26 +70,56 @@ jobs:
         env:
           STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
           STATE_TABLE: ${{ secrets.STATE_DDB_TABLE }}
-          STATE_REGION: ${{ secrets.STATE_REGION }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
-          BACKEND_REGION="${STATE_REGION:-${{ inputs.aws_region }}}"
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "STATE_BUCKET is empty or not set."
+            exit 1
+          fi
+          if [ -z "$STATE_TABLE" ]; then
+            echo "STATE_DDB_TABLE is empty or not set."
+            exit 1
+          fi
+          if [ -z "$APP_PREFIX" ]; then
+            echo "APP_PREFIX is empty or not set."
+            exit 1
+          fi
+          echo "STATE_BUCKET=${STATE_BUCKET}"
+          echo "STATE_TABLE=${STATE_TABLE}"
+          echo "APP_PREFIX=${APP_PREFIX}"
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
-          key            = "terraform-state-files/annual-sports/${{ inputs.env }}/ecs-backend/${{ inputs.aws_region }}/terraform.tfstate"
-          region         = "${BACKEND_REGION}"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/ecs-backend/${{ inputs.aws_region }}/terraform.tfstate"
+          region         = "us-east-1"
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
           EOF
+          echo "----- backend.hcl -----"
+          cat backend.hcl
+          echo "-----------------------"
 
       - name: Write tfvars
         env:
           TFVARS_CONTENT: ${{ inputs.aws_region == 'us-east-1' && secrets.TFVARS_ECS_BACKEND_US_EAST_1 || inputs.aws_region == 'eu-west-1' && secrets.TFVARS_ECS_BACKEND_EU_WEST_1 || inputs.aws_region == 'ap-southeast-1' && secrets.TFVARS_ECS_BACKEND_AP_SOUTHEAST_1 || '' }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
           if [ -z "$TFVARS_CONTENT" ]; then
             echo "Region-specific TFVARS_ECS_BACKEND is empty or not set."
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
+          TFVARS_APP_PREFIX="$(awk -F= '/^app_prefix/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_APP_PREFIX" ]; then
+            echo "app_prefix is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_APP_PREFIX" != "$APP_PREFIX" ]; then
+            echo "app_prefix mismatch: runtime.auto.tfvars=${TFVARS_APP_PREFIX}, secrets.APP_PREFIX=${APP_PREFIX}"
+            exit 1
+          fi
+          echo "----- runtime.auto.tfvars -----"
+          cat runtime.auto.tfvars
+          echo "-------------------------------"
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl

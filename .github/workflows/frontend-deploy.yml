@@ -1,4 +1,5 @@
 name: Frontend Deploy
+run-name: Frontend Deploy (${{ inputs.env }}, ${{ inputs.api_url }})
 
 on:
   workflow_dispatch:
@@ -54,16 +55,33 @@ jobs:
         env:
           STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
           STATE_TABLE: ${{ secrets.STATE_DDB_TABLE }}
-          STATE_REGION: ${{ secrets.STATE_REGION }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
-          BACKEND_REGION="${STATE_REGION:-us-east-1}"
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "STATE_BUCKET is empty or not set."
+            exit 1
+          fi
+          if [ -z "$STATE_TABLE" ]; then
+            echo "STATE_DDB_TABLE is empty or not set."
+            exit 1
+          fi
+          if [ -z "$APP_PREFIX" ]; then
+            echo "APP_PREFIX is empty or not set."
+            exit 1
+          fi
+          echo "STATE_BUCKET=${STATE_BUCKET}"
+          echo "STATE_TABLE=${STATE_TABLE}"
+          echo "APP_PREFIX=${APP_PREFIX}"
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
-          key            = "terraform-state-files/annual-sports/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
-          region         = "${BACKEND_REGION}"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
+          region         = "us-east-1"
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
           EOF
+          echo "----- backend.hcl -----"
+          cat backend.hcl
+          echo "-----------------------"
 
       - name: Write tfvars
         env:
@@ -74,6 +92,9 @@ jobs:
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
+          echo "----- runtime.auto.tfvars -----"
+          cat runtime.auto.tfvars
+          echo "-------------------------------"
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl
@@ -100,6 +121,7 @@ jobs:
         env:
           VITE_API_URL: ${{ inputs.api_url }}
         run: |
+          echo "VITE_API_URL=${VITE_API_URL}"
           cd "$GITHUB_WORKSPACE/frontend"
           npm run build
 
