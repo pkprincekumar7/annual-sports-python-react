@@ -76,9 +76,6 @@ jobs:
             echo "APP_PREFIX is empty or not set."
             exit 1
           fi
-          echo "STATE_BUCKET=${STATE_BUCKET}"
-          echo "STATE_TABLE=${STATE_TABLE}"
-          echo "APP_PREFIX=${APP_PREFIX}"
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
           key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
@@ -86,9 +83,6 @@ jobs:
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
           EOF
-          echo "----- backend.hcl -----"
-          cat backend.hcl
-          echo "-----------------------"
 
       - name: Write tfvars
         env:
@@ -99,9 +93,6 @@ jobs:
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
-          echo "----- runtime.auto.tfvars -----"
-          cat runtime.auto.tfvars
-          echo "-------------------------------"
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl
