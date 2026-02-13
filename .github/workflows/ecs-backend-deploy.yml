@@ -97,10 +97,6 @@ jobs:
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           REPO_ROOT="$GITHUB_WORKSPACE"
-          if [ -z "$SERVICE" ]; then
-            echo "SERVICE is empty. Select a service in workflow inputs."
-            exit 1
-          fi
           SERVICE_DIR="$SERVICE"
           case "$SERVICE" in
             sports-part-service) SERVICE_DIR="sports-participation-service" ;;
@@ -136,16 +132,7 @@ jobs:
           IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
           svc="${NAME_PREFIX}-${SERVICE}"
           CONTAINER_NAME="$SERVICE"
-          echo "SERVICE=$SERVICE"
-          echo "CLUSTER_NAME=$CLUSTER_NAME"
-          echo "svc=$svc"
-          if [ -z "$SERVICE" ]; then
-            echo "SERVICE is empty. Select a service in workflow inputs."
-            exit 1
-          fi
-          aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$svc"
           TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$svc" --query 'services[0].taskDefinition' --output text)
-          echo "TASK_DEF_ARN=$TASK_DEF_ARN"
           TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition')
           NEW_IMAGE="$IMAGE_PREFIX/${NAME_PREFIX}-${SERVICE}:${IMAGE_TAG}"
           NEW_TASK_DEF=$(echo "$TASK_DEF_JSON" | jq --arg name "$CONTAINER_NAME" --arg image "$NEW_IMAGE" '
