@@ -38,7 +38,7 @@ cp tfvars/dev.tfvars.example dev.tfvars
 Update `dev.tfvars`:
 - Core: `aws_account_id`, `aws_region`, `env`
 - Core: `app_prefix` (max 5 chars)
-- Networking: `public_subnets`, `private_subnets`, `availability_zones`
+- Networking: VPC CIDR is derived from `env` and subnets/AZs are computed automatically.
 - Domains & certs: `api_domain`, `route53_zone_id`, `acm_certificate_arn`,
   `cloudfront_acm_certificate_arn`
 - Logging buckets: `alb_access_logs_bucket_name`, `cloudfront_logs_bucket_name`
@@ -76,7 +76,7 @@ Database names are derived automatically using `env` (for example,
 `as-dev-identity`, `as-dev-enrollment`, etc.).
 
 `app_s3_bucket_name` should point to a single global/shared bucket managed in a
-separate stack. This stack only grants ECS task roles access to that bucket.
+separate stack. This stack only grants IAM permissions to ECS task roles.
 
 ### ALB Access Logs Bucket (Manual)
 
@@ -359,6 +359,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
    - `STATE_BUCKET`
    - `STATE_DDB_TABLE`
    - `APP_PREFIX`
+   - `ROLE_ARN`
    - `TFVARS_ECS_BACKEND_US_EAST_1`
    - `TFVARS_ECS_BACKEND_EU_WEST_1`
    - `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
@@ -379,7 +380,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
    - Optional: add a condition to restrict to your repo, e.g.
      `token.actions.githubusercontent.com:sub = repo:<owner>/<repo>:*`
 3) Attach required permissions (least-privilege or `AdministratorAccess` for setup).
-4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `role_arn`.
+4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `ROLE_ARN`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
 `.github/workflows/ecs-backend-terraform.yml`.
@@ -388,12 +389,12 @@ Workflow inputs:
 - `action`: `plan`, `apply`, or `destroy`
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
 - `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
-- `role_arn`: IAM role to assume via OIDC
 
 Required GitHub Environment secrets (per env):
 - `STATE_BUCKET`
 - `STATE_DDB_TABLE`
 - `APP_PREFIX`
+- `ROLE_ARN`
 - `TFVARS_ECS_BACKEND_US_EAST_1`
 - `TFVARS_ECS_BACKEND_EU_WEST_1`
 - `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
@@ -406,7 +407,6 @@ Example inputs:
 - `action`: `apply`
 - `env`: `dev`
 - `aws_region`: `us-east-1`
-- `role_arn`: `arn:aws:iam::123456789012:role/github-terraform`
 
 ## GitHub Actions (Deploy)
 
@@ -422,7 +422,6 @@ to a secret.
 Workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
 - `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
-- `role_arn`: IAM role to assume via OIDC
 - `service`: a single service name (dropdown)
 
 Behavior:
@@ -433,7 +432,6 @@ Behavior:
 Restart workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`
 - `aws_region`: `us-east-1`, `eu-west-1`, `ap-southeast-1`
-- `role_arn`: IAM role to assume via OIDC
 - `service`: a single service name (dropdown)
 
 Restart workflow behavior:
@@ -453,3 +451,39 @@ Restart workflow behavior:
 - Cloud Map service discovery is enabled; it is derived from `app_prefix` and `env`
   (for example, `as.dev.local`).
 - ECS tasks run in private subnets; the ALB is private behind API Gateway.
+
+## Mode Selection (Per-Region vs Global Edge)
+This stack supports both modes via tfvars:
+- **Per-region mode**
+  - `cloudfront_enabled = true`
+  - `api_domain` set to a regional API domain
+  - `cloudfront_acm_certificate_arn` set (us-east-1)
+  - `redis_endpoint_override` not set (regional Redis is created)
+- **Global-edge mode**
+  - `cloudfront_enabled = false`
+  - `api_domain` can be empty or set (not used)
+  - `cloudfront_acm_certificate_arn` not required
+  - `redis_endpoint_override` set to the regional global-datastore endpoint
+
+## Multi-Region Active/Active (Global Edge)
+To run active/active behind one domain:
+1) Create the global Redis stack (`infra/aws/redis-global`) and record the regional endpoints.
+2) Apply `ecs-backend` in each region with:
+   - `cloudfront_enabled = false`
+   - `redis_endpoint_override` set to the regional Redis endpoint
+3) Apply the global edge stack (`infra/aws/api-edge`) and point your domain to it.
+4) Apply the app bucket policy stack (`infra/aws/app-bucket`) with task role ARNs.
+
+Use the ECS backend outputs for VPC and security group IDs when wiring the
+global Redis stack:
+- `vpc_id`
+- `private_subnet_ids`
+- `ecs_tasks_security_group_id`
+
+Use the ECS backend output `task_role_arns` to grant access in the global app
+bucket policy stack.
+
+## Outputs Used by Other Stacks
+- For `redis-global`: `vpc_id`, `private_subnet_ids`, `ecs_tasks_security_group_id`
+- For `api-edge`: `api_gateway_endpoint`
+- For `app-bucket`: `task_role_arns`

@@ -1,0 +1,33 @@
+aws_region = "us-east-1"
+app_prefix = "as"
+env        = "dev"
+
+api_domain      = "sports-dev-api.learning-dev.com"
+route53_zone_id = "Z1234567890"
+cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cloudfront-cert-id"
+
+origin_domains = {
+  "us-east-1"      = "abcd1234.execute-api.us-east-1.amazonaws.com"
+  "eu-west-1"      = "wxyz5678.execute-api.eu-west-1.amazonaws.com"
+  "ap-southeast-1" = "lmno9012.execute-api.ap-southeast-1.amazonaws.com"
+}
+
+default_origin_id = "us-east-1"
+origin_routing_header = "x-region"
+origin_routing_map = {
+  "us-east-1"      = "us-east-1"
+  "eu-west-1"      = "eu-west-1"
+  "ap-southeast-1" = "ap-southeast-1"
+}
+
+geo_routing_enabled = true
+geo_routing_map = {
+  "US" = "us-east-1"
+  "IE" = "eu-west-1"
+  "SG" = "ap-southeast-1"
+}
+
+cloudfront_logging_enabled = true
+cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
+cloudfront_price_class = "PriceClass_100"
+waf_enabled = true

@@ -14,14 +14,14 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_route53_record" "api_domain" {
-  count   = local.has_route53_zone && var.api_domain != "" ? 1 : 0
+  count   = local.has_route53_zone && var.api_domain != "" && var.cloudfront_enabled ? 1 : 0
   zone_id = var.route53_zone_id
   name    = var.api_domain
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.api.domain_name
-    zone_id                = aws_cloudfront_distribution.api.hosted_zone_id
+    name                   = aws_cloudfront_distribution.api[0].domain_name
+    zone_id                = aws_cloudfront_distribution.api[0].hosted_zone_id
     evaluate_target_health = true
   }
 }

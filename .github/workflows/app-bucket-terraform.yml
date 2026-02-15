@@ -1,0 +1,120 @@
+name: App Bucket Terraform
+run-name: App Bucket Terraform (${{ inputs.action }}, ${{ inputs.env }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action: plan, apply, destroy"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      env:
+        description: "Environment (dev, qa, stg, perf, prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - qa
+          - stg
+          - perf
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: app-bucket-terraform-${{ inputs.env }}-us-east-1
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    defaults:
+      run:
+        working-directory: infra/aws/app-bucket
+    env:
+      TF_IN_AUTOMATION: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate ROLE_ARN secret
+        env:
+          ROLE_ARN: ${{ secrets.ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE_ARN" ]; then
+            echo "ROLE_ARN secret is empty or not set for this environment."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Write backend config
+        env:
+          STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
+          STATE_TABLE: ${{ secrets.STATE_DDB_TABLE }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
+        run: |
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "STATE_BUCKET is empty or not set."
+            exit 1
+          fi
+          if [ -z "$STATE_TABLE" ]; then
+            echo "STATE_DDB_TABLE is empty or not set."
+            exit 1
+          fi
+          if [ -z "$APP_PREFIX" ]; then
+            echo "APP_PREFIX is empty or not set."
+            exit 1
+          fi
+          cat > backend.hcl <<EOF
+          bucket         = "${STATE_BUCKET}"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/app-bucket/us-east-1/terraform.tfstate"
+          region         = "us-east-1"
+          dynamodb_table = "${STATE_TABLE}"
+          encrypt        = true
+          EOF
+
+      - name: Write tfvars
+        env:
+          TFVARS_CONTENT: ${{ secrets.TFVARS_APP_BUCKET }}
+        run: |
+          if [ -z "$TFVARS_CONTENT" ]; then
+            echo "TFVARS_APP_BUCKET is empty or not set."
+            exit 1
+          fi
+          printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
+
+      - name: Terraform init
+        run: terraform init -backend-config=backend.hcl
+
+      - name: Terraform plan
+        if: ${{ inputs.action == 'plan' }}
+        run: terraform plan -input=false
+
+      - name: Terraform apply
+        if: ${{ inputs.action == 'apply' }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Terraform plan (destroy)
+        if: ${{ inputs.action == 'destroy' }}
+        run: terraform plan -destroy -input=false
+
+      - name: Terraform destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: terraform destroy -auto-approve -input=false

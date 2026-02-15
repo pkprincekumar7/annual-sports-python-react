@@ -22,6 +22,7 @@ resource "aws_iam_role" "vpc_flow_logs" {
 }
 
 data "aws_iam_policy_document" "vpc_flow_logs" {
+  count = var.flow_logs_enabled ? 1 : 0
   statement {
     effect = "Allow"
     actions = [
@@ -38,7 +39,7 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
   count  = var.flow_logs_enabled ? 1 : 0
   name   = "${local.name_prefix}-vpc-flow-logs"
   role   = aws_iam_role.vpc_flow_logs[0].id
-  policy = data.aws_iam_policy_document.vpc_flow_logs.json
+  policy = data.aws_iam_policy_document.vpc_flow_logs[0].json
 }
 
 resource "aws_flow_log" "vpc" {

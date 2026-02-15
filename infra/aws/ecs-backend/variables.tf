@@ -77,7 +77,7 @@ variable "cloudfront_acm_certificate_arn" {
   default     = ""
   description = "ACM certificate ARN in us-east-1 for CloudFront custom domain."
   validation {
-    condition     = var.api_domain == "" || var.cloudfront_acm_certificate_arn != ""
+    condition     = !var.cloudfront_enabled || var.api_domain == "" || var.cloudfront_acm_certificate_arn != ""
     error_message = "cloudfront_acm_certificate_arn must be set when api_domain is provided."
   }
 }
@@ -87,7 +87,7 @@ variable "cloudfront_logs_bucket_name" {
   default     = ""
   description = "Optional existing S3 bucket name for CloudFront access logs."
   validation {
-    condition     = var.cloudfront_logging_enabled ? var.cloudfront_logs_bucket_name != "" : true
+    condition     = var.cloudfront_enabled && var.cloudfront_logging_enabled ? var.cloudfront_logs_bucket_name != "" : true
     error_message = "cloudfront_logs_bucket_name must be set when cloudfront_logging_enabled is true."
   }
 }
@@ -96,6 +96,12 @@ variable "cloudfront_logging_enabled" {
   type        = bool
   default     = true
   description = "Enable CloudFront access logging."
+}
+
+variable "cloudfront_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable CloudFront distribution for the API (disable when using global edge stack)."
 }
 
 variable "route53_zone_id" {
@@ -278,6 +284,18 @@ variable "app_s3_bucket_name" {
     condition     = var.app_s3_bucket_name != ""
     error_message = "app_s3_bucket_name must be set."
   }
+}
+
+variable "redis_endpoint_override" {
+  type        = string
+  default     = ""
+  description = "Optional external Redis endpoint to use instead of creating regional Redis."
+}
+
+variable "redis_port" {
+  type        = number
+  default     = 6379
+  description = "Redis port."
 }
 
 variable "app_prefix" {
