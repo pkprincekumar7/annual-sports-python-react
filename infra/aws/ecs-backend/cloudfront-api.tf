@@ -11,6 +11,7 @@ locals {
 }
 
 resource "aws_cloudfront_distribution" "api" {
+  count               = var.cloudfront_enabled ? 1 : 0
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = ""
@@ -56,9 +57,9 @@ resource "aws_cloudfront_distribution" "api" {
   }
 
   dynamic "logging_config" {
-    for_each = var.cloudfront_logging_enabled ? [1] : []
+    for_each = var.cloudfront_enabled && var.cloudfront_logging_enabled ? [1] : []
     content {
-      bucket          = "${var.cloudfront_logs_bucket_name}.s3.amazonaws.com"
+      bucket          = data.aws_s3_bucket.cloudfront_logs[0].bucket_regional_domain_name
       include_cookies = false
       prefix          = ""
     }

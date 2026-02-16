@@ -1,0 +1,53 @@
+function handler(event) {
+  var request = event.request;
+  var headers = request.headers || {};
+
+  var headerName = "${origin_routing_header}".toLowerCase();
+  var headerValue = "";
+  if (headers[headerName] && headers[headerName].value) {
+    headerValue = headers[headerName].value;
+  }
+
+  var originMap = ${origin_map_json};
+  var geoEnabled = ${geo_routing_enabled};
+  var geoMap = ${geo_map_json};
+  var originDomains = ${origin_domains_json};
+  var defaultOriginId = "${default_origin_id}";
+
+  var originId = originMap[headerValue] ? originMap[headerValue] : "";
+
+  if (!originId && geoEnabled) {
+    var countryHeader = headers["cloudfront-viewer-country"];
+    var countryCode = countryHeader && countryHeader.value ? countryHeader.value.toUpperCase() : "";
+    if (countryCode && geoMap[countryCode]) {
+      originId = geoMap[countryCode];
+    }
+  }
+
+  if (!originId) {
+    originId = defaultOriginId;
+  }
+
+  var domainName = originDomains[originId];
+  if (!domainName && originId !== defaultOriginId) {
+    originId = defaultOriginId;
+    domainName = originDomains[originId];
+  }
+
+  if (domainName) {
+    request.origin = {
+      custom: {
+        domainName: domainName,
+        port: 443,
+        protocol: "https",
+        path: "",
+        sslProtocols: ["TLSv1.2"],
+        readTimeout: 30,
+        keepaliveTimeout: 5
+      }
+    };
+    request.headers["host"] = { value: domainName };
+  }
+
+  return request;
+}

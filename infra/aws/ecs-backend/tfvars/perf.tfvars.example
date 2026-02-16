@@ -21,8 +21,14 @@ cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate
 alb_access_logs_bucket_name = "your-alb-logs-bucket"
 cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
 
+# Optional global edge (disable regional CloudFront)
+# cloudfront_enabled = false
+
 # App S3 bucket (read/write for all services)
 app_s3_bucket_name = "your-app-bucket"
+
+# Optional external Redis (global datastore)
+# redis_endpoint_override = "your-redis-endpoint"
 
 # CORS
 apigw_cors_allowed_origins = ["https://sports-perf.your-domain.com"]
@@ -42,7 +48,7 @@ redis_auth_token_bootstrap = "replace-with-sample-redis-token"
 # service_cpu_map = { "identity-service" = 512 }
 # service_memory_map = { "identity-service" = 1024 }
 
-# Services (required)
+# Services
 services = {
   "identity-service" = {
     port                 = 8001

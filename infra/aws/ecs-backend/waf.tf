@@ -1,6 +1,6 @@
 resource "aws_wafv2_web_acl" "cloudfront" {
   provider = aws.us_east_1
-  count    = var.waf_enabled ? 1 : 0
+  count    = var.cloudfront_enabled && var.waf_enabled ? 1 : 0
 
   name  = "${local.name_prefix}-cloudfront-waf"
   scope = "CLOUDFRONT"

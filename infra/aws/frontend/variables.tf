@@ -1,6 +1,10 @@
 variable "aws_region" {
   type        = string
   description = "AWS region for frontend resources (use us-east-1)."
+  validation {
+    condition     = var.aws_region == "us-east-1"
+    error_message = "aws_region must be us-east-1 for the frontend stack."
+  }
 }
 
 variable "bucket_name" {
