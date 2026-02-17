@@ -451,6 +451,8 @@ Restart workflow behavior:
 - Cloud Map service discovery is enabled; it is derived from `app_prefix` and `env`
   (for example, `as.dev.local`).
 - ECS tasks run in private subnets; the ALB is private behind API Gateway.
+- IAM role/policy names are global per AWS account. This stack automatically
+  appends `aws_region` to IAM names to avoid cross-region name collisions.
 
 ## Mode Selection (Per-Region vs Global Edge)
 This stack supports both modes via tfvars:

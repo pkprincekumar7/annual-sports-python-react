@@ -12,6 +12,7 @@ locals {
   ecr_repos = keys(local.services)
   image_prefix = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
   name_prefix = "${var.app_prefix}-${var.env}"
+  iam_name_prefix = "${local.name_prefix}-${var.aws_region}"
   cluster_name = "${local.name_prefix}-cluster"
   service_discovery_namespace = "${var.app_prefix}.${var.env}.local"
   sorted_service_keys = sort(keys(local.services))

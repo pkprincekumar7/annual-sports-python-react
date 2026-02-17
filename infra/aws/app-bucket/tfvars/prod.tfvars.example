@@ -2,6 +2,6 @@ aws_region  = "us-east-1"
 bucket_name = "your-app-bucket"
 
 task_role_arns = [
-  "arn:aws:iam::123456789012:role/as-prod-identity-service-task-role",
-  "arn:aws:iam::123456789012:role/as-prod-enrollment-service-task-role"
+  "arn:aws:iam::123456789012:role/as-prod-us-east-1-identity-service-task-role",
+  "arn:aws:iam::123456789012:role/as-prod-eu-west-1-enrollment-service-task-role"
 ]

@@ -1,5 +1,5 @@
 resource "aws_iam_role" "task_execution" {
-  name = "${local.name_prefix}-task-execution"
+  name = "${local.iam_name_prefix}-task-execution"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -20,7 +20,7 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
 }
 
 resource "aws_iam_policy" "secrets_access" {
-  name        = "${local.name_prefix}-secrets-access"
+  name        = "${local.iam_name_prefix}-secrets-access"
   description = "Allow ECS task execution to read Secrets Manager values."
   policy = jsonencode({
     Version = "2012-10-17"
@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "task_execution_secrets" {
 }
 
 resource "aws_iam_policy" "kms_decrypt" {
-  name        = "${local.name_prefix}-kms-decrypt"
+  name        = "${local.iam_name_prefix}-kms-decrypt"
   description = "Allow ECS task execution to decrypt Secrets Manager secrets."
   policy = jsonencode({
     Version = "2012-10-17"
@@ -75,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "task_execution_kms" {
 
 resource "aws_iam_role" "task_role" {
   for_each = local.services
-  name = "${local.name_prefix}-${each.key}-task-role"
+  name = "${local.iam_name_prefix}-${each.key}-task-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -91,7 +91,7 @@ resource "aws_iam_role" "task_role" {
 }
 
 resource "aws_iam_policy" "ecs_exec" {
-  name        = "${local.name_prefix}-ecs-exec"
+  name        = "${local.iam_name_prefix}-ecs-exec"
   description = "Allow ECS Exec via SSM."
   policy = jsonencode({
     Version = "2012-10-17"
@@ -117,7 +117,7 @@ resource "aws_iam_role_policy_attachment" "task_role_ecs_exec" {
 }
 
 resource "aws_iam_policy" "app_s3_access" {
-  name        = "${local.name_prefix}-app-s3-access"
+  name        = "${local.iam_name_prefix}-app-s3-access"
   description = "Allow ECS tasks to read/write app S3 bucket."
   policy = jsonencode({
     Version = "2012-10-17"
