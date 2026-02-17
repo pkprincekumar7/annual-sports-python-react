@@ -145,7 +145,7 @@ variable "alb_access_logs_prefix" {
 
 variable "waf_enabled" {
   type        = bool
-  default     = false
+  default     = true
   description = "Enable AWS WAF for the ALB."
 }
 
