@@ -78,6 +78,11 @@ jobs:
           AWS_REGION: ${{ inputs.aws_region }}
           SERVICE: ${{ inputs.service }}
         run: |
+          set -euo pipefail
+          if [ -z "${SERVICE:-}" ] || [[ "$SERVICE" == -* ]]; then
+            echo "SERVICE is empty or invalid: '$SERVICE'"
+            exit 1
+          fi
           NAME_PREFIX="${APP_PREFIX}-${{ inputs.env }}"
           CLUSTER_NAME="${APP_PREFIX}-${{ inputs.env }}-cluster"
           svc="${NAME_PREFIX}-${SERVICE}"
