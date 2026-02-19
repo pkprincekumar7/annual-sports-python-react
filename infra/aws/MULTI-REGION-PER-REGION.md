@@ -40,23 +40,49 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
    - `sports-dev-api-eu.learning-dev.com`
    - `sports-dev-api-ap.learning-dev.com`
 
-2) **Enable regional CloudFront and ensure regional tfvars include**
-   - `cloudfront_enabled = true`
-   - `aws_region` = region
-   - `aws_account_id`
-   - `api_domain` = regional API domain
-   - `route53_zone_id` = hosted zone
-   - `acm_certificate_arn` = regional ACM cert for ALB HTTPS
-   - `cloudfront_acm_certificate_arn` = us-east-1 certificate ARN (required if `api_domain` is set)
-   - `cloudfront_logs_bucket_name` = region-specific bucket (required if logging enabled)
-   - `alb_access_logs_bucket_name` = region-specific bucket
-   - `app_s3_bucket_name` = global bucket
-   - `vpc_cidr`, `availability_zones`, `public_subnets`, `private_subnets`
-   - `apigw_cors_allowed_origins` includes frontend domain
-   - Email settings and secrets bootstrap as needed:
-     `email_provider`, `gmail_user`/`sendgrid_user`/`smtp_*`, `email_from`,
-     `redis_auth_token_bootstrap`
-   - `services` map
+2) **Enable regional CloudFront and initialize regional tfvars**
+   - Start from `infra/aws/ecs-backend/tfvars/<env>.tfvars.example` and set all required keys.
+   - Recommended baseline (adjust values per env and region):
+```hcl
+# Core
+aws_region     = "us-east-1"
+aws_account_id = "123456789012"
+env            = "dev"
+app_prefix     = "as"
+
+# Networking
+vpc_cidr           = "10.10.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets     = ["10.10.1.0/24", "10.10.2.0/24"]
+private_subnets    = ["10.10.11.0/24", "10.10.12.0/24"]
+
+# Domains & certificates (per-region mode)
+cloudfront_enabled            = true
+api_domain                    = "sports-dev-api-us.learning-dev.com"
+route53_zone_id               = "Z1234567890"
+acm_certificate_arn           = "arn:aws:acm:us-east-1:123456789012:certificate/<alb-cert>"
+cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/<cloudfront-cert>"
+
+# Logging buckets
+alb_access_logs_bucket_name = "your-alb-logs-bucket"
+cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
+
+# Global app bucket
+app_s3_bucket_name = "your-app-bucket"
+
+# CORS
+apigw_cors_allowed_origins = ["https://sports-dev.your-domain.com"]
+
+# Email + secrets bootstrap (example)
+email_provider              = "gmail"
+gmail_user                  = "your-email@your-domain.com"
+email_from                  = "no-reply@your-domain.com"
+redis_auth_token_bootstrap  = "replace-with-sample-redis-token"
+
+# Services map is required (use the full map from tfvars example)
+services = { ... }
+```
+   - Keep the `services` map complete (all services) exactly like the example file.
 
 3) **Apply**
    - Run `ecs-backend-terraform.yml` with `action=apply` for the region.
@@ -75,6 +101,14 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 ## Secrets replication (global)
 Run `replicate-secrets.yml` after any Secrets Manager changes in the source
 region to keep all regional secrets in sync.
+
+### Redis auth token updates
+- `redis_auth_token_bootstrap` is only a bootstrap value for initializing empty secrets.
+- `redis_endpoint_override` is not used in this per-region mode (leave it unset).
+- If Redis token changes later:
+  1) Update Secrets Manager in source region and replicate (`replicate-secrets.yml`)
+  2) Re-apply each regional `ecs-backend` stack (if regional Redis is used)
+  3) Re-deploy/restart ECS services in each region so tasks pick up the new secret value
 
 ## Frontend (single region)
 1) Set frontend tfvars:

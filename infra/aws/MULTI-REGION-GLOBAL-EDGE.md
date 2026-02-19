@@ -37,20 +37,46 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 1) **Set unique regional API domains (optional)**
    - Optional when using global edge; can be empty or region-specific
    - Examples: `sports-dev-api-us.learning-dev.com`, `sports-dev-api-eu.learning-dev.com`
-2) **Disable regional CloudFront and ensure regional tfvars include**
-   - `cloudfront_enabled = false`
-   - `aws_region` = region
-   - `aws_account_id`
-   - `api_domain` can be empty or region-specific (not used for global edge)
-   - `app_s3_bucket_name` = global bucket
-   - `alb_access_logs_bucket_name` = region-specific bucket
-   - `acm_certificate_arn` = regional ACM cert for ALB HTTPS
-   - `vpc_cidr`, `availability_zones`, `public_subnets`, `private_subnets`
-   - `apigw_cors_allowed_origins` includes frontend domain
-   - Email settings and secrets bootstrap as needed:
-     `email_provider`, `gmail_user`/`sendgrid_user`/`smtp_*`, `email_from`,
-     `redis_auth_token_bootstrap`
-   - `services` map
+2) **Disable regional CloudFront and initialize regional tfvars**
+   - Start from `infra/aws/ecs-backend/tfvars/<env>.tfvars.example` and set all required keys.
+   - Recommended baseline (adjust values per env and region):
+```hcl
+# Core
+aws_region     = "us-east-1"
+aws_account_id = "123456789012"
+env            = "dev"
+app_prefix     = "as"
+
+# Networking
+vpc_cidr           = "10.10.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnets     = ["10.10.1.0/24", "10.10.2.0/24"]
+private_subnets    = ["10.10.11.0/24", "10.10.12.0/24"]
+
+# Domains & certificates (global-edge mode)
+cloudfront_enabled  = false
+api_domain          = "sports-dev-api-us.learning-dev.com" # optional; not used by global edge stack
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/<alb-cert>"
+
+# Logging buckets
+alb_access_logs_bucket_name = "your-alb-logs-bucket"
+
+# Global app bucket
+app_s3_bucket_name = "your-app-bucket"
+
+# CORS
+apigw_cors_allowed_origins = ["https://sports-dev.your-domain.com"]
+
+# Email + secrets bootstrap (example)
+email_provider              = "gmail"
+gmail_user                  = "your-email@your-domain.com"
+email_from                  = "no-reply@your-domain.com"
+redis_auth_token_bootstrap  = "replace-with-sample-redis-token"
+
+# Services map is required (use the full map from tfvars example)
+services = { ... }
+```
+   - Keep the `services` map complete (all services) exactly like the example file.
 3) **Apply**
    - Run `ecs-backend-terraform.yml` with `action=apply`.
 4) **Collect outputs**
@@ -69,6 +95,10 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 2) **Apply `redis-global-terraform.yml`**
 3) **Record the regional endpoints**
    - Outputs: `primary_endpoint`, `eu_west_1_endpoint`, `ap_southeast_1_endpoint`
+4) **Use matching regional endpoint in each backend**
+   - `us-east-1` backend → `redis_endpoint_override = primary_endpoint`
+   - `eu-west-1` backend → `redis_endpoint_override = eu_west_1_endpoint`
+   - `ap-southeast-1` backend → `redis_endpoint_override = ap_southeast_1_endpoint`
 
 ## Step 3: Re-apply regional backends (repeat per region)
 1) **Point Redis to global datastore**
@@ -102,6 +132,15 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 ## Step 5a: Secrets replication (global)
 Run `replicate-secrets.yml` after any Secrets Manager changes in the source
 region to keep all regional secrets in sync.
+
+### Redis auth token rotation
+- Keep one shared Redis token value across:
+  - `redis-global` variable `redis_auth_token`
+  - Secrets Manager `redis_auth_token` secret in each region
+- If token value changes:
+  1) Update Secrets Manager in source region and replicate (`replicate-secrets.yml`)
+  2) Re-apply `redis-global-terraform.yml` with new `redis_auth_token`
+  3) Re-deploy/restart ECS services in each region so tasks pick up the new secret value
 
 ## Step 6: Frontend (single region)
 1) Set frontend tfvars:
