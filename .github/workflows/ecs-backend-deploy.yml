@@ -106,6 +106,15 @@ jobs:
           NAME_PREFIX: ${{ steps.vars.outputs.name_prefix }}
           SERVICE: ${{ steps.vars.outputs.service }}
         run: |
+          set -euo pipefail
+          if [ -z "${SERVICE:-}" ] || [[ "$SERVICE" == -* ]]; then
+            echo "SERVICE is empty or invalid: '$SERVICE'"
+            exit 1
+          fi
+          if [ -z "${NAME_PREFIX:-}" ]; then
+            echo "NAME_PREFIX is empty."
+            exit 1
+          fi
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           REPO_ROOT="$GITHUB_WORKSPACE"
           SERVICE_DIR="$SERVICE"
@@ -148,12 +157,27 @@ jobs:
 
       - name: Register new task definitions and deploy
         env:
-          CLUSTER_NAME: ${{ needs.build_push.outputs.cluster_name }}
-          NAME_PREFIX: ${{ needs.build_push.outputs.name_prefix }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
+          ENV_NAME: ${{ inputs.env }}
           IMAGE_TAG: ${{ needs.build_push.outputs.image_tag }}
           AWS_REGION: ${{ inputs.aws_region }}
           SERVICE: ${{ needs.build_push.outputs.service }}
         run: |
+          set -euo pipefail
+          if [ -z "${APP_PREFIX:-}" ]; then
+            echo "APP_PREFIX is empty."
+            exit 1
+          fi
+          if [ -z "${ENV_NAME:-}" ]; then
+            echo "ENV_NAME is empty."
+            exit 1
+          fi
+          if [ -z "${SERVICE:-}" ] || [[ "$SERVICE" == -* ]]; then
+            echo "SERVICE is empty or invalid: '$SERVICE'"
+            exit 1
+          fi
+          NAME_PREFIX="${APP_PREFIX}-${ENV_NAME}"
+          CLUSTER_NAME="${APP_PREFIX}-${ENV_NAME}-cluster"
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
           svc="${NAME_PREFIX}-${SERVICE}"
