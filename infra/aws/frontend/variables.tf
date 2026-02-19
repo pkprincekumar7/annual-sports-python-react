@@ -10,6 +10,10 @@ variable "aws_region" {
 variable "bucket_name" {
   type        = string
   description = "Existing S3 bucket name for frontend assets."
+  validation {
+    condition     = var.bucket_name != ""
+    error_message = "bucket_name must be set."
+  }
 }
 
 variable "cloudfront_logs_bucket_name" {
@@ -38,6 +42,14 @@ variable "domain" {
   type        = string
   default     = ""
   description = "Optional frontend domain for CloudFront."
+  validation {
+    condition     = var.domain == "" || var.route53_zone_id != ""
+    error_message = "route53_zone_id must be set when domain is provided."
+  }
+  validation {
+    condition     = var.domain == "" || var.cloudfront_acm_certificate_arn != ""
+    error_message = "cloudfront_acm_certificate_arn must be set when domain is provided."
+  }
 }
 
 variable "route53_zone_id" {

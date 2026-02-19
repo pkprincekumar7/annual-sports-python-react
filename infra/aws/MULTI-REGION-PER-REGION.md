@@ -79,7 +79,9 @@ region to keep all regional secrets in sync.
 ## Frontend (single region)
 1) Set frontend tfvars:
    - `aws_region = "us-east-1"`
+   - `bucket_name` = S3 bucket for frontend assets
    - `domain = "sports-dev.learning-dev.com"`
+   - `route53_zone_id` = hosted zone (required if `domain` is set)
    - `cloudfront_acm_certificate_arn` = us-east-1 certificate ARN
 2) Apply `frontend-terraform.yml`.
 3) **Deploy frontend**

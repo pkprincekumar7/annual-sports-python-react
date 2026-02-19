@@ -84,8 +84,10 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 2) Provide:
    - `origin_domains` map with API Gateway endpoints from each region
    - `default_origin_id`
-   - `origin_routing_header` and/or `geo_routing_map`
+   - `origin_routing_header` + `origin_routing_map` (header value → origin ID)
+   - `geo_routing_enabled = true` + `geo_routing_map` (country code → origin ID)
    - `api_domain` (e.g., `sports-dev-api.learning-dev.com`)
+   - `route53_zone_id` (required if `api_domain` is set)
    - `cloudfront_acm_certificate_arn` (us-east-1, required if `api_domain` is set)
    - `cloudfront_logs_bucket_name` (required if logging enabled)
 3) Route 53 will point the API domain to the global CloudFront distribution.
@@ -102,17 +104,23 @@ Run `replicate-secrets.yml` after any Secrets Manager changes in the source
 region to keep all regional secrets in sync.
 
 ## Step 6: Frontend (single region)
-1) Apply `frontend-terraform.yml` (us-east-1)
-2) **Deploy frontend**
+1) Set frontend tfvars:
+   - `aws_region = "us-east-1"`
+   - `bucket_name` = S3 bucket for frontend assets
+   - `domain` (e.g., `sports-dev.learning-dev.com`)
+   - `route53_zone_id` = hosted zone (required if `domain` is set)
+   - `cloudfront_acm_certificate_arn` = us-east-1 certificate ARN
+2) Apply `frontend-terraform.yml`.
+3) **Deploy frontend**
    - Run `frontend-deploy.yml`.
-3) Set `VITE_API_URL = https://sports-dev-api.learning-dev.com`
+4) Set `VITE_API_URL = https://sports-dev-api.learning-dev.com`
 
 ## Destroy order
 1) Frontend (optional)
 2) `api-edge`
 3) `app-bucket` policy
-4) Regional `ecs-backend`
-5) `redis-global`
+4) `redis-global`
+5) Regional `ecs-backend`
 
 ## Best practice notes
 - Keep **log buckets** separate from the global app bucket.

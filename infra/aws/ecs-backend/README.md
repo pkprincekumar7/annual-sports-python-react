@@ -12,8 +12,9 @@ Terraform for ECS is already scaffolded here:
 
 Before you run Terraform, create the S3 bucket and DynamoDB table manually. The
 environment backend files are committed so everyone shares the same bucket/table.
-Update the `hcl/backend-*.hcl` files with your actual bucket and table names
-before `terraform init`. For multi-region, use a region-specific state key.
+Update the `hcl/backend-*.hcl` files with your actual bucket, table, and
+`<aws-region>` placeholder value before `terraform init`. For multi-region, use
+a region-specific state key.
 Terraform does not allow variables in backend config files because they are
 loaded during `terraform init` before any variables or tfvars are evaluated.
 

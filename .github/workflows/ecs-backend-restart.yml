@@ -47,9 +47,6 @@ concurrency:
   group: ecs-backend-restart-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
   cancel-in-progress: false
 
-env:
-  APP_PREFIX: "as"
-
 jobs:
   restart:
     runs-on: ubuntu-latest
@@ -58,9 +55,14 @@ jobs:
       - name: Validate ROLE_ARN secret
         env:
           ROLE_ARN: ${{ secrets.ROLE_ARN }}
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
           if [ -z "$ROLE_ARN" ]; then
             echo "ROLE_ARN secret is empty or not set for this environment."
+            exit 1
+          fi
+          if [ -z "$APP_PREFIX" ]; then
+            echo "APP_PREFIX secret is empty or not set for this environment."
             exit 1
           fi
 
@@ -72,6 +74,7 @@ jobs:
 
       - name: Restart ECS services
         env:
+          APP_PREFIX: ${{ secrets.APP_PREFIX }}
           AWS_REGION: ${{ inputs.aws_region }}
           SERVICE: ${{ inputs.service }}
         run: |

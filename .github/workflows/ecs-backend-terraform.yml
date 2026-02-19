@@ -117,6 +117,24 @@ jobs:
             echo "app_prefix mismatch: runtime.auto.tfvars=${TFVARS_APP_PREFIX}, secrets.APP_PREFIX=${APP_PREFIX}"
             exit 1
           fi
+          TFVARS_AWS_REGION="$(awk -F= '/^aws_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_AWS_REGION" ]; then
+            echo "aws_region is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_AWS_REGION" != "${{ inputs.aws_region }}" ]; then
+            echo "aws_region mismatch: runtime.auto.tfvars=${TFVARS_AWS_REGION}, workflow input=${{ inputs.aws_region }}"
+            exit 1
+          fi
+          TFVARS_ENV="$(awk -F= '/^env/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_ENV" ]; then
+            echo "env is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_ENV" != "${{ inputs.env }}" ]; then
+            echo "env mismatch: runtime.auto.tfvars=${TFVARS_ENV}, workflow input=${{ inputs.env }}"
+            exit 1
+          fi
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl

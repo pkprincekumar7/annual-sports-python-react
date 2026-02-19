@@ -20,6 +20,10 @@ variable "env" {
 variable "origin_domains" {
   type        = map(string)
   description = "Origin ID to API Gateway domain (no https://)."
+  validation {
+    condition     = length(var.origin_domains) > 0
+    error_message = "origin_domains must include at least one origin."
+  }
 }
 
 variable "default_origin_id" {
@@ -41,6 +45,10 @@ variable "origin_routing_map" {
   type        = map(string)
   default     = {}
   description = "Map of header value to origin ID."
+  validation {
+    condition     = alltrue([for origin_id in values(var.origin_routing_map) : contains(keys(var.origin_domains), origin_id)])
+    error_message = "Every origin_routing_map value must exist in origin_domains."
+  }
 }
 
 variable "geo_routing_enabled" {
@@ -53,12 +61,20 @@ variable "geo_routing_map" {
   type        = map(string)
   default     = {}
   description = "Map of country code (e.g., US, IN) to origin ID."
+  validation {
+    condition     = alltrue([for origin_id in values(var.geo_routing_map) : contains(keys(var.origin_domains), origin_id)])
+    error_message = "Every geo_routing_map value must exist in origin_domains."
+  }
 }
 
 variable "api_domain" {
   type        = string
   default     = ""
   description = "Optional custom domain for the API (points to global CloudFront)."
+  validation {
+    condition     = var.api_domain == "" || var.route53_zone_id != ""
+    error_message = "route53_zone_id must be set when api_domain is provided."
+  }
 }
 
 variable "route53_zone_id" {

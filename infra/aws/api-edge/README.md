@@ -15,7 +15,7 @@ to regional API Gateway endpoints based on a header (active/active).
 - `origin_routing_map`: header value → origin ID
 - `geo_routing_enabled`: enable geo routing when header not set
 - `geo_routing_map`: country code → origin ID
-- `api_domain`, `route53_zone_id`, `cloudfront_acm_certificate_arn` (optional)
+- `api_domain`, `route53_zone_id`, `cloudfront_acm_certificate_arn` (optional, but if `api_domain` is set then both `route53_zone_id` and `cloudfront_acm_certificate_arn` are required)
 - `cloudfront_logs_bucket_name` if logging is enabled
 
 ## Example tfvars

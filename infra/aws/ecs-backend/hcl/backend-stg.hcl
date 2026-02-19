@@ -1,5 +1,5 @@
 bucket         = "your-terraform-state-bucket"
-key            = "terraform-state-files/as/stg/ecs-backend/us-east-1/terraform.tfstate"
+key            = "terraform-state-files/<app-prefix>/stg/ecs-backend/<aws-region>/terraform.tfstate"
 region         = "us-east-1"
 dynamodb_table = "terraform-locks"
 encrypt        = true
