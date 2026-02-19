@@ -94,6 +94,7 @@ resource "aws_elasticache_replication_group" "eu_west_1" {
   description                   = "Secondary Redis replication group for ${local.name_prefix} (eu-west-1)."
   subnet_group_name             = aws_elasticache_subnet_group.eu_west_1[0].name
   security_group_ids            = [aws_security_group.eu_west_1[0].id]
+  auth_token                    = var.redis_transit_encryption_enabled ? var.redis_auth_token : null
   global_replication_group_id   = aws_elasticache_global_replication_group.global.global_replication_group_id
 }
 
@@ -141,5 +142,6 @@ resource "aws_elasticache_replication_group" "ap_southeast_1" {
   description                   = "Secondary Redis replication group for ${local.name_prefix} (ap-southeast-1)."
   subnet_group_name             = aws_elasticache_subnet_group.ap_southeast_1[0].name
   security_group_ids            = [aws_security_group.ap_southeast_1[0].id]
+  auth_token                    = var.redis_transit_encryption_enabled ? var.redis_auth_token : null
   global_replication_group_id   = aws_elasticache_global_replication_group.global.global_replication_group_id
 }
