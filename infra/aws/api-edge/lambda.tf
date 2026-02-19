@@ -1,5 +1,6 @@
 data "archive_file" "origin_router" {
   type = "zip"
+  source_content_filename = "index.js"
   source_content = templatefile("${path.module}/lambda/origin-router.js.tmpl", {
     origin_routing_header = var.origin_routing_header
     origin_map_json       = jsonencode(var.origin_routing_map)
