@@ -20,4 +20,4 @@ redis_node_type = "cache.r6g.large"
 redis_num_cache_nodes = 1
 redis_transit_encryption_enabled = true
 redis_at_rest_encryption_enabled = true
-redis_auth_token = "replace-with-strong-token"
+redis_auth_token = "replace-with-sample-redis-token"
