@@ -111,8 +111,12 @@ variable "ap_southeast_1_ecs_sg_id" {
 
 variable "redis_node_type" {
   type        = string
-  default     = "cache.t4g.small"
+  default     = "cache.r6g.large"
   description = "Redis node type."
+  validation {
+    condition     = !startswith(var.redis_node_type, "cache.t")
+    error_message = "Global Datastore does not support burstable cache.t* node types. Use a supported family such as cache.r6g.large."
+  }
 }
 
 variable "redis_num_cache_nodes" {

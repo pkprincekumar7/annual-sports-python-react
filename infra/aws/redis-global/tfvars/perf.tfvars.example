@@ -16,7 +16,7 @@ ap_southeast_1_vpc_id     = "vpc-xxxx"
 ap_southeast_1_subnet_ids = ["subnet-a", "subnet-b"]
 ap_southeast_1_ecs_sg_id  = "sg-ecs-tasks"
 
-redis_node_type = "cache.t4g.small"
+redis_node_type = "cache.r6g.large"
 redis_num_cache_nodes = 1
 redis_transit_encryption_enabled = true
 redis_at_rest_encryption_enabled = true
