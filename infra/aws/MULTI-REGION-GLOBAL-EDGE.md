@@ -94,6 +94,10 @@ services = { ... }
    - `enable_eu_west_1 = true` with `eu_west_1_vpc_id`, `eu_west_1_subnet_ids`, `eu_west_1_ecs_sg_id`
    - `enable_ap_southeast_1 = true` with `ap_southeast_1_vpc_id`, `ap_southeast_1_subnet_ids`, `ap_southeast_1_ecs_sg_id`
    - `redis_auth_token` (must match the value used by ECS tasks)
+   - Use **private subnet IDs only** for all `*_subnet_ids` values (do not use public subnets).
+   - Recommended source: `private_subnet_ids` output from each regional `ecs-backend` stack.
+   - `primary_ecs_sg_id`, `eu_west_1_ecs_sg_id`, and `ap_southeast_1_ecs_sg_id` are required when their regions are enabled.
+   - Recommended source: `ecs_tasks_security_group_id` output from each regional `ecs-backend` stack.
 2) **Apply `redis-global-terraform.yml`**
 3) **Record the regional endpoints**
    - Outputs: `primary_endpoint`, `eu_west_1_endpoint`, `ap_southeast_1_endpoint`
