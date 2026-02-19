@@ -92,6 +92,20 @@ jobs:
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
+          TFVARS_AWS_REGION="$(awk -F= '/^aws_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_AWS_REGION" ]; then
+            echo "aws_region is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_AWS_REGION" != "us-east-1" ]; then
+            echo "aws_region must be us-east-1 for frontend; got ${TFVARS_AWS_REGION}."
+            exit 1
+          fi
+          TFVARS_BUCKET_NAME="$(awk -F= '/^bucket_name/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_BUCKET_NAME" ]; then
+            echo "bucket_name is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl

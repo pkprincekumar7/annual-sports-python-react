@@ -37,7 +37,7 @@ Update `dev.tfvars`:
 
 Notes and constraints:
 - `aws_region` must match the existing S3 bucket region.
-- If you set `domain`, the ACM cert must be in `us-east-1`.
+- If you set `domain`, set both `route53_zone_id` and `cloudfront_acm_certificate_arn` (ACM in `us-east-1`).
 - This stack manages the **entire** bucket policy. If the bucket already has a
   policy, Terraform will replace it.
 - This stack also manages bucket **encryption**, **versioning**, and **lifecycle**

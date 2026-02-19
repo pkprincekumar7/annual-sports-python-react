@@ -23,6 +23,8 @@ task_role_arns = [
   encryption, CORS, lifecycle) should be set where the bucket is created.
 - Apply this stack after regional `ecs-backend` outputs are available
   (`task_role_arns`).
+- This stack owns the full bucket policy document for `bucket_name`. If another
+  stack/service also manages that policy, apply/destroy can conflict.
 
 ## Outputs Used by Other Stacks
 - `bucket_name` and `bucket_arn` for validation or IAM policy references

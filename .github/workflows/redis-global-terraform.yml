@@ -109,6 +109,24 @@ jobs:
             echo "app_prefix mismatch: runtime.auto.tfvars=${TFVARS_APP_PREFIX}, secrets.APP_PREFIX=${APP_PREFIX}"
             exit 1
           fi
+          TFVARS_ENV="$(awk -F= '/^env/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_ENV" ]; then
+            echo "env is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_ENV" != "${{ inputs.env }}" ]; then
+            echo "env mismatch: runtime.auto.tfvars=${TFVARS_ENV}, workflow input=${{ inputs.env }}"
+            exit 1
+          fi
+          TFVARS_PRIMARY_REGION="$(awk -F= '/^primary_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_PRIMARY_REGION" ]; then
+            echo "primary_region is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_PRIMARY_REGION" != "us-east-1" ]; then
+            echo "primary_region must be us-east-1; got ${TFVARS_PRIMARY_REGION}."
+            exit 1
+          fi
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl

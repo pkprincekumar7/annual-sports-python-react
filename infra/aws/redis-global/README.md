@@ -36,8 +36,10 @@ redis_auth_token = "replace-with-strong-token"
 ```
 
 ## Notes
+- `primary_region` is fixed to `us-east-1` in this stack.
 - Ensure the `redis_auth_token` matches the value stored in Secrets Manager for
   `redis_auth_token` in each regional ECS stack.
+- If `redis_transit_encryption_enabled = true`, `redis_auth_token` must be set.
 - If you disable a secondary region, set its `enable_*` flag to `false` and
   leave the related VPC/subnet/SG variables empty.
 
