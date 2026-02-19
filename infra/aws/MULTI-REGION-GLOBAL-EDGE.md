@@ -71,6 +71,8 @@ apigw_cors_allowed_origins = ["https://sports-dev.your-domain.com"]
 email_provider              = "gmail"
 gmail_user                  = "your-email@your-domain.com"
 email_from                  = "no-reply@your-domain.com"
+
+# Secrets bootstrap (sample value; only used if Redis secret is empty)
 redis_auth_token_bootstrap  = "replace-with-sample-redis-token"
 
 # Services map is required (use the full map from tfvars example)
