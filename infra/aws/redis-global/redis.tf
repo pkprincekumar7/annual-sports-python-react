@@ -92,19 +92,8 @@ resource "aws_elasticache_replication_group" "eu_west_1" {
   count                         = var.enable_eu_west_1 ? 1 : 0
   replication_group_id          = "${local.primary_name}-eu-west-1"
   description                   = "Secondary Redis replication group for ${local.name_prefix} (eu-west-1)."
-  engine                        = "redis"
-  node_type                     = var.redis_node_type
-  num_cache_clusters            = var.redis_num_cache_nodes
-  port                          = var.redis_port
   subnet_group_name             = aws_elasticache_subnet_group.eu_west_1[0].name
   security_group_ids            = [aws_security_group.eu_west_1[0].id]
-  automatic_failover_enabled    = local.automatic_failover_enabled
-  multi_az_enabled              = local.multi_az_enabled
-  transit_encryption_enabled    = var.redis_transit_encryption_enabled
-  at_rest_encryption_enabled    = var.redis_at_rest_encryption_enabled
-  auth_token                    = var.redis_transit_encryption_enabled ? var.redis_auth_token : null
-  snapshot_retention_limit      = var.redis_snapshot_retention_limit
-  snapshot_window               = var.redis_snapshot_window
   global_replication_group_id   = aws_elasticache_global_replication_group.global.global_replication_group_id
 }
 
@@ -150,18 +139,7 @@ resource "aws_elasticache_replication_group" "ap_southeast_1" {
   count                         = var.enable_ap_southeast_1 ? 1 : 0
   replication_group_id          = "${local.primary_name}-ap-southeast-1"
   description                   = "Secondary Redis replication group for ${local.name_prefix} (ap-southeast-1)."
-  engine                        = "redis"
-  node_type                     = var.redis_node_type
-  num_cache_clusters            = var.redis_num_cache_nodes
-  port                          = var.redis_port
   subnet_group_name             = aws_elasticache_subnet_group.ap_southeast_1[0].name
   security_group_ids            = [aws_security_group.ap_southeast_1[0].id]
-  automatic_failover_enabled    = local.automatic_failover_enabled
-  multi_az_enabled              = local.multi_az_enabled
-  transit_encryption_enabled    = var.redis_transit_encryption_enabled
-  at_rest_encryption_enabled    = var.redis_at_rest_encryption_enabled
-  auth_token                    = var.redis_transit_encryption_enabled ? var.redis_auth_token : null
-  snapshot_retention_limit      = var.redis_snapshot_retention_limit
-  snapshot_window               = var.redis_snapshot_window
   global_replication_group_id   = aws_elasticache_global_replication_group.global.global_replication_group_id
 }
