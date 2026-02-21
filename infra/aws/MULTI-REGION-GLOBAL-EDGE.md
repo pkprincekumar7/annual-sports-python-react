@@ -163,7 +163,19 @@ services = { ... }
    - `route53_zone_id` (required if `api_domain` is set)
    - `cloudfront_acm_certificate_arn` (us-east-1, required if `api_domain` is set)
    - `cloudfront_logs_bucket_name` (required if logging enabled)
-3) Route 53 will point the API domain to the global CloudFront distribution.
+3) Create CloudFront invalidation (recommended after apply)
+   1. Open AWS Console → CloudFront.
+   2. Go to Distributions.
+   3. Open the distribution with alias `sports-dev-api.learning-dev.com` (or your API domain).
+   4. Open the Invalidation tab.
+   5. Click Create invalidation.
+   6. In Object paths, enter `/*`.
+   7. Click Create invalidation.
+   8. Wait until invalidation status is Completed.
+   - Troubleshooting fallback (only if edge keeps serving stale Lambda behavior):
+     make a no-op change in `infra/aws/api-edge/lambda/origin-router.js.tmpl` (for example, a comment),
+     re-apply `api-edge-terraform.yml`, then invalidate `/*` again.
+4) Route 53 will point the API domain to the global CloudFront distribution.
 
 ## Step 5: App bucket policy (global)
 1) Apply `app-bucket-terraform.yml` with:
