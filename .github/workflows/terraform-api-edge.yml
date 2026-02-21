@@ -1,5 +1,5 @@
-name: Redis Global Terraform
-run-name: Redis Global Terraform (${{ inputs.action }}, ${{ inputs.env }})
+name: Terraform API Edge
+run-name: Terraform API Edge (${{ inputs.action }}, ${{ inputs.env }})
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: redis-global-terraform-${{ inputs.env }}-us-east-1
+  group: terraform-api-edge-${{ inputs.env }}-us-east-1
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
     environment: ${{ inputs.env }}
     defaults:
       run:
-        working-directory: infra/aws/redis-global
+        working-directory: infra/aws/api-edge
     env:
       TF_IN_AUTOMATION: "1"
     steps:
@@ -84,7 +84,7 @@ jobs:
           fi
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
-          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/redis-global/us-east-1/terraform.tfstate"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/api-edge/us-east-1/terraform.tfstate"
           region         = "us-east-1"
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
@@ -92,15 +92,15 @@ jobs:
 
       - name: Write tfvars
         env:
-          TFVARS_CONTENT: ${{ secrets.TFVARS_REDIS_GLOBAL }}
+          TFVARS_CONTENT: ${{ secrets.TFVARS_API_EDGE }}
           APP_PREFIX: ${{ secrets.APP_PREFIX }}
         run: |
           if [ -z "$TFVARS_CONTENT" ]; then
-            echo "TFVARS_REDIS_GLOBAL is empty or not set."
+            echo "TFVARS_API_EDGE is empty or not set."
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
-          TFVARS_APP_PREFIX="$(awk -F= '/^app_prefix/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          TFVARS_APP_PREFIX="$(awk -F= '/^app_prefix/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
           if [ -z "$TFVARS_APP_PREFIX" ]; then
             echo "app_prefix is missing or empty in runtime.auto.tfvars."
             exit 1
@@ -109,22 +109,22 @@ jobs:
             echo "app_prefix mismatch: runtime.auto.tfvars=${TFVARS_APP_PREFIX}, secrets.APP_PREFIX=${APP_PREFIX}"
             exit 1
           fi
-          TFVARS_ENV="$(awk -F= '/^env/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          TFVARS_AWS_REGION="$(awk -F= '/^aws_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_AWS_REGION" ]; then
+            echo "aws_region is missing or empty in runtime.auto.tfvars."
+            exit 1
+          fi
+          if [ "$TFVARS_AWS_REGION" != "us-east-1" ]; then
+            echo "aws_region must be us-east-1 for api-edge; got ${TFVARS_AWS_REGION}."
+            exit 1
+          fi
+          TFVARS_ENV="$(awk -F= '/^env/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
           if [ -z "$TFVARS_ENV" ]; then
             echo "env is missing or empty in runtime.auto.tfvars."
             exit 1
           fi
           if [ "$TFVARS_ENV" != "${{ inputs.env }}" ]; then
             echo "env mismatch: runtime.auto.tfvars=${TFVARS_ENV}, workflow input=${{ inputs.env }}"
-            exit 1
-          fi
-          TFVARS_PRIMARY_REGION="$(awk -F= '/^primary_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
-          if [ -z "$TFVARS_PRIMARY_REGION" ]; then
-            echo "primary_region is missing or empty in runtime.auto.tfvars."
-            exit 1
-          fi
-          if [ "$TFVARS_PRIMARY_REGION" != "us-east-1" ]; then
-            echo "primary_region must be us-east-1; got ${TFVARS_PRIMARY_REGION}."
             exit 1
           fi
 

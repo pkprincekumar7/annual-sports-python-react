@@ -64,16 +64,16 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
    - For variable descriptions and expected behavior, refer to `infra/aws/ecs-backend/README.md`.
 
 3) **Apply**
-   - Run `ecs-backend-terraform.yml` with `action=apply` for the region.
+   - Run `terraform-ecs-backend.yml` with `action=apply` for the region.
 4) **Replicate secrets (recommended immediately after apply)**
    - Run `replicate-secrets.yml` for the same environment so newly initialized/updated secrets are synchronized across regions.
 5) **Deploy backend services**
-   - Run `ecs-backend-deploy.yml` per service for each region.
+   - Run `build-deploy-ecs-backend.yml` per service for each region.
 6) **Capture outputs for next stack**
    - `task_role_arns` (used by `app-bucket` policy)
 
 ## App bucket policy (global)
-1) Apply `app-bucket-terraform.yml` with:
+1) Apply `terraform-app-bucket.yml` with:
    - `bucket_name = app_s3_bucket_name`
    - `task_role_arns` from each regional `ecs-backend` output
 2) **Confirm access**
@@ -93,9 +93,9 @@ region to keep all regional secrets in sync.
 ## Frontend (single region)
 1) Set frontend tfvars using `infra/aws/frontend/tfvars/<env>.tfvars.example`.
    - Refer to `infra/aws/frontend/README.md` for variable details.
-2) Apply `frontend-terraform.yml`.
+2) Apply `terraform-frontend.yml`.
 3) **Deploy frontend**
-   - Run `frontend-deploy.yml`.
+   - Run `build-deploy-frontend.yml`.
 
 ## How frontend selects API
 - Use `VITE_API_URL` to point to the desired regional API domain.

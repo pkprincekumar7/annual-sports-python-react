@@ -1,18 +1,9 @@
-name: API Edge Terraform
-run-name: API Edge Terraform (${{ inputs.action }}, ${{ inputs.env }})
+name: Build Deploy Frontend
+run-name: Build Deploy Frontend (${{ inputs.env }}, ${{ inputs.api_url }})
 
 on:
   workflow_dispatch:
     inputs:
-      action:
-        description: "Terraform action: plan, apply, destroy"
-        required: true
-        default: "plan"
-        type: choice
-        options:
-          - plan
-          - apply
-          - destroy
       env:
         description: "Environment (dev, qa, stg, perf, prod)"
         required: true
@@ -24,24 +15,26 @@ on:
           - stg
           - perf
           - prod
+      api_url:
+        description: "VITE_API_URL for frontend build"
+        required: true
+        default: "https://sports-dev-api.learning-dev.com"
 
 permissions:
   id-token: write
   contents: read
 
 concurrency:
-  group: api-edge-terraform-${{ inputs.env }}-us-east-1
+  group: build-deploy-frontend-${{ inputs.env }}-us-east-1
   cancel-in-progress: false
 
 jobs:
-  terraform:
+  build_deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.env }}
     defaults:
       run:
-        working-directory: infra/aws/api-edge
-    env:
-      TF_IN_AUTOMATION: "1"
+        working-directory: infra/aws/frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,7 +77,7 @@ jobs:
           fi
           cat > backend.hcl <<EOF
           bucket         = "${STATE_BUCKET}"
-          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/api-edge/us-east-1/terraform.tfstate"
+          key            = "terraform-state-files/${APP_PREFIX}/${{ inputs.env }}/frontend/us-east-1/terraform.tfstate"
           region         = "us-east-1"
           dynamodb_table = "${STATE_TABLE}"
           encrypt        = true
@@ -92,57 +85,60 @@ jobs:
 
       - name: Write tfvars
         env:
-          TFVARS_CONTENT: ${{ secrets.TFVARS_API_EDGE }}
-          APP_PREFIX: ${{ secrets.APP_PREFIX }}
+          TFVARS_CONTENT: ${{ secrets.TFVARS_FRONTEND }}
         run: |
           if [ -z "$TFVARS_CONTENT" ]; then
-            echo "TFVARS_API_EDGE is empty or not set."
+            echo "TFVARS_FRONTEND is empty or not set."
             exit 1
           fi
           printf "%s" "$TFVARS_CONTENT" > runtime.auto.tfvars
-          TFVARS_APP_PREFIX="$(awk -F= '/^app_prefix/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
-          if [ -z "$TFVARS_APP_PREFIX" ]; then
-            echo "app_prefix is missing or empty in runtime.auto.tfvars."
-            exit 1
-          fi
-          if [ "$TFVARS_APP_PREFIX" != "$APP_PREFIX" ]; then
-            echo "app_prefix mismatch: runtime.auto.tfvars=${TFVARS_APP_PREFIX}, secrets.APP_PREFIX=${APP_PREFIX}"
-            exit 1
-          fi
           TFVARS_AWS_REGION="$(awk -F= '/^aws_region/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
           if [ -z "$TFVARS_AWS_REGION" ]; then
             echo "aws_region is missing or empty in runtime.auto.tfvars."
             exit 1
           fi
           if [ "$TFVARS_AWS_REGION" != "us-east-1" ]; then
-            echo "aws_region must be us-east-1 for api-edge; got ${TFVARS_AWS_REGION}."
+            echo "aws_region must be us-east-1 for frontend; got ${TFVARS_AWS_REGION}."
             exit 1
           fi
-          TFVARS_ENV="$(awk -F= '/^env/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
-          if [ -z "$TFVARS_ENV" ]; then
-            echo "env is missing or empty in runtime.auto.tfvars."
-            exit 1
-          fi
-          if [ "$TFVARS_ENV" != "${{ inputs.env }}" ]; then
-            echo "env mismatch: runtime.auto.tfvars=${TFVARS_ENV}, workflow input=${{ inputs.env }}"
+          TFVARS_BUCKET_NAME="$(awk -F= '/^bucket_name/ {sub(/^[[:space:]]+/, "", $2); gsub(/^[[:space:]]*\"|\"[[:space:]]*$/, "", $2); print $2}' runtime.auto.tfvars)"
+          if [ -z "$TFVARS_BUCKET_NAME" ]; then
+            echo "bucket_name is missing or empty in runtime.auto.tfvars."
             exit 1
           fi
 
       - name: Terraform init
         run: terraform init -backend-config=backend.hcl
 
-      - name: Terraform plan
-        if: ${{ inputs.action == 'plan' }}
-        run: terraform plan -input=false
+      - name: Read Terraform outputs
+        id: tfout
+        run: |
+          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)
+          CF_DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id)
+          echo "frontend_bucket=$FRONTEND_BUCKET" >> "$GITHUB_OUTPUT"
+          echo "cf_distribution_id=$CF_DISTRIBUTION_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Terraform apply
-        if: ${{ inputs.action == 'apply' }}
-        run: terraform apply -auto-approve -input=false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
-      - name: Terraform plan (destroy)
-        if: ${{ inputs.action == 'destroy' }}
-        run: terraform plan -destroy -input=false
+      - name: Install dependencies
+        run: |
+          cd "$GITHUB_WORKSPACE/frontend"
+          npm install
 
-      - name: Terraform destroy
-        if: ${{ inputs.action == 'destroy' }}
-        run: terraform destroy -auto-approve -input=false
+      - name: Build frontend
+        env:
+          VITE_API_URL: ${{ inputs.api_url }}
+        run: |
+          cd "$GITHUB_WORKSPACE/frontend"
+          npm run build
+
+      - name: Upload to S3
+        run: |
+          aws s3 sync "$GITHUB_WORKSPACE/frontend/dist" "s3://${{ steps.tfout.outputs.frontend_bucket }}"
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation --distribution-id "${{ steps.tfout.outputs.cf_distribution_id }}" --paths "/*"

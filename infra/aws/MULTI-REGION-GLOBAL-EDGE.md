@@ -64,11 +64,11 @@ For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
    - Use the example file as the source of truth for all variables.
    - Refer to `infra/aws/ecs-backend/README.md` for variable details.
 2) Keep `cloudfront_enabled = false` (global edge mode)
-3) Apply `ecs-backend-terraform.yml` with `action=apply`
+3) Apply `terraform-ecs-backend.yml` with `action=apply`
 4) Collect outputs:
    - `api_gateway_endpoint` (for `api-edge`)
    - `task_role_arns` (for `app-bucket`)
-5) Deploy backend services (`ecs-backend-deploy.yml`) if needed
+5) Deploy backend services (`build-deploy-ecs-backend.yml`) if needed
 
 ## Step 1a: Secrets replication (global)
 
@@ -90,7 +90,7 @@ This keeps all regional secret values synchronized.
 
 ## Step 2: Global API Edge
 
-1) Apply `api-edge-terraform.yml` in `us-east-1`
+1) Apply `terraform-api-edge.yml` in `us-east-1`
 2) Provide:
    - Use `infra/aws/api-edge/tfvars/<env>.tfvars.example` as the source of truth.
    - Set `origin_domains` from regional `api_gateway_endpoint` outputs.
@@ -109,12 +109,12 @@ This keeps all regional secret values synchronized.
 Troubleshooting fallback:
 - If edge behavior appears stale after apply + invalidation:
   - make a no-op change in `infra/aws/api-edge/lambda/origin-router.js.tmpl`
-  - re-apply `api-edge-terraform.yml`
+  - re-apply `terraform-api-edge.yml`
   - invalidate `/*` again
 
 ## Step 3: App bucket policy (global)
 
-1) Apply `app-bucket-terraform.yml` with:
+1) Apply `terraform-app-bucket.yml` with:
    - tfvars based on `infra/aws/app-bucket/tfvars/<env>.tfvars.example`
    - `task_role_arns` from all regional backend outputs
    - Refer to `infra/aws/app-bucket/README.md` for variable details.
@@ -122,7 +122,7 @@ Troubleshooting fallback:
 
 ## Step 4: Frontend (single region)
 
-1) Apply `frontend-terraform.yml` in `us-east-1`
+1) Apply `terraform-frontend.yml` in `us-east-1`
    - Use `infra/aws/frontend/tfvars/<env>.tfvars.example`.
    - Refer to `infra/aws/frontend/README.md` for variable details.
 2) Deploy frontend

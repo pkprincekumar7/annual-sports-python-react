@@ -1,5 +1,5 @@
-name: Frontend Terraform
-run-name: Frontend Terraform (${{ inputs.action }}, ${{ inputs.env }})
+name: Terraform Frontend
+run-name: Terraform Frontend (${{ inputs.action }}, ${{ inputs.env }})
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: frontend-terraform-${{ inputs.env }}-us-east-1
+  group: terraform-frontend-${{ inputs.env }}-us-east-1
   cancel-in-progress: false
 
 jobs:

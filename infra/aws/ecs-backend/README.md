@@ -384,7 +384,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `ROLE_ARN`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
-`.github/workflows/ecs-backend-terraform.yml`.
+`.github/workflows/terraform-ecs-backend.yml`.
 
 Workflow inputs:
 - `action`: `plan`, `apply`, or `destroy`
@@ -412,9 +412,9 @@ Example inputs:
 ## GitHub Actions (Deploy)
 
 This repo includes a manual workflow to build, push, and deploy ECS services:
-`.github/workflows/ecs-backend-deploy.yml`.
+`.github/workflows/build-deploy-ecs-backend.yml`.
 It also includes a restart-only workflow:
-`.github/workflows/ecs-backend-restart.yml`.
+`.github/workflows/restart-ecs-backend.yml`.
 
 Note: the deploy/restart workflows use a workflow-level `APP_PREFIX`. If you
 change `app_prefix` in tfvars, update `APP_PREFIX` in those workflows or move it
