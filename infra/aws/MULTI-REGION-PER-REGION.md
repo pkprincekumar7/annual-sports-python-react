@@ -32,6 +32,24 @@ that targets a **region-specific API domain**. There is **no global API domain**
    - Terraform state region is fixed to `us-east-1` in workflows.
    - `ROLE_ARN` is read from GitHub Environment secrets (no workflow input).
 
+## Terragrunt dependency graph (output flow)
+
+Terragrunt transfers values between stacks via remote state + `dependency` blocks.
+Each arrow below means "downstream stack reads outputs from upstream stack state".
+
+```text
+ecs-backend/us-east-1  --(task_role_arns)--> app-bucket
+ecs-backend/eu-west-1  --(task_role_arns)--> app-bucket
+ecs-backend/ap-southeast-1 --(task_role_arns)--> app-bucket
+
+frontend (independent from backend dependencies)
+```
+
+Notes:
+- `app-bucket` depends on task roles from all three regional `ecs-backend` stacks.
+- In per-region mode, `redis_endpoint_override` is not used; each region uses its own Redis in `ecs-backend`.
+- `frontend` does not consume backend stack outputs directly in Terragrunt.
+
 ## Regional backend (repeat per region)
 For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 
@@ -88,9 +106,11 @@ services = { ... }
 
 3) **Apply**
    - Run `ecs-backend-terraform.yml` with `action=apply` for the region.
-4) **Deploy backend services**
+4) **Replicate secrets (recommended immediately after apply)**
+   - Run `replicate-secrets.yml` for the same environment so newly initialized/updated secrets are synchronized across regions.
+5) **Deploy backend services**
    - Run `ecs-backend-deploy.yml` per service for each region.
-5) **Capture outputs for next stack**
+6) **Capture outputs for next stack**
    - `task_role_arns` (used by `app-bucket` policy)
 
 ## App bucket policy (global)

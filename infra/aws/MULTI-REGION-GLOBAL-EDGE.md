@@ -31,6 +31,34 @@ using a **single CloudFront distribution** with multi-origin routing.
    - Terraform state region is fixed to `us-east-1` in workflows.
    - `ROLE_ARN` is read from GitHub Environment secrets (no workflow input).
 
+## Terragrunt dependency graph (output flow)
+
+Terragrunt transfers values between stacks via remote state + `dependency` blocks.
+Each arrow below means "downstream stack reads outputs from upstream stack state".
+
+```text
+ecs-backend-initial/us-east-1  --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
+ecs-backend-initial/eu-west-1  --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
+ecs-backend-initial/ap-southeast-1 --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
+
+redis-global --(primary_endpoint / eu_west_1_endpoint / ap_southeast_1_endpoint)--> ecs-backend-global/{region}
+
+ecs-backend-global/us-east-1  --(api_gateway_endpoint)--> api-edge
+ecs-backend-global/eu-west-1  --(api_gateway_endpoint)--> api-edge
+ecs-backend-global/ap-southeast-1 --(api_gateway_endpoint)--> api-edge
+
+ecs-backend-global/us-east-1  --(task_role_arns)--> app-bucket
+ecs-backend-global/eu-west-1  --(task_role_arns)--> app-bucket
+ecs-backend-global/ap-southeast-1 --(task_role_arns)--> app-bucket
+
+frontend (independent from backend dependencies)
+```
+
+Notes:
+- `api-edge` depends on all three `ecs-backend-global` regional stacks.
+- `app-bucket` depends on task roles from all three `ecs-backend-global` regional stacks.
+- `frontend` does not consume backend stack outputs directly in Terragrunt.
+
 ## Step 1: Regional backend (repeat per region)
 For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 
@@ -81,7 +109,9 @@ services = { ... }
    - Keep the `services` map complete (all services) exactly like the example file.
 3) **Apply**
    - Run `ecs-backend-terraform.yml` with `action=apply`.
-4) **Collect outputs**
+4) **Replicate secrets (recommended immediately after apply)**
+   - Run `replicate-secrets.yml` for the same environment so newly initialized/updated secrets are synchronized across regions.
+5) **Collect outputs**
    - `vpc_id`, `private_subnet_ids`, `ecs_tasks_security_group_id`
    - `api_gateway_endpoint` (for `api-edge` origin_domains)
    - `task_role_arns` (for `app-bucket` policy)
@@ -105,14 +135,21 @@ services = { ... }
    - `us-east-1` backend → `redis_endpoint_override = primary_endpoint`
    - `eu-west-1` backend → `redis_endpoint_override = eu_west_1_endpoint`
    - `ap-southeast-1` backend → `redis_endpoint_override = ap_southeast_1_endpoint`
+   - Important: `redis_endpoint_override` must be the Redis host only (no scheme and no port).
+   - Correct: `master.as-dev-redis-global.xxxxxx.use1.cache.amazonaws.com`
+   - Incorrect: `rediss://master.as-dev-redis-global.xxxxxx.use1.cache.amazonaws.com:6379`
+   - Why: the ECS backend module appends scheme/auth/port when composing `REDIS_URL`; including `:6379` here causes malformed URLs like `...:6379:6379/...`.
 
 ## Step 3: Re-apply regional backends (repeat per region)
 1) **Point Redis to global datastore**
    - `redis_endpoint_override = <regional-redis-endpoint>`
+   - Use hostname only for `<regional-redis-endpoint>` (do not include protocol or port).
 2) **Apply**
    - Run `ecs-backend-terraform.yml` with `action=apply`.
    - This re-apply removes the temporary regional Redis and switches services to the global datastore.
-3) **Deploy backend services**
+3) **Replicate secrets (recommended immediately after re-apply)**
+   - Run `replicate-secrets.yml` for the same environment if any Secrets Manager values changed (especially Redis token).
+4) **Deploy backend services**
    - Run `ecs-backend-deploy.yml` per service for each region.
 
 ## Step 4: Global API Edge

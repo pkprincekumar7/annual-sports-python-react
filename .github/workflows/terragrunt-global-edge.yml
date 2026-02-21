@@ -1,0 +1,154 @@
+name: Terragrunt Global-Edge
+run-name: Terragrunt Global-Edge (${{ inputs.action }}, ${{ inputs.env }}, ${{ inputs.phase }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terragrunt action"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      env:
+        description: "Environment directory under terragrunt/global-edge"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - qa
+          - stg
+          - perf
+          - prod
+      phase:
+        description: "Phase/scope to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ecs-initial
+          - redis-global
+          - ecs-global
+          - api-edge
+          - app-bucket
+          - frontend
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terragrunt-global-edge-${{ inputs.env }}-${{ inputs.phase }}
+  cancel-in-progress: false
+
+jobs:
+  terragrunt:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    defaults:
+      run:
+        working-directory: infra/aws/terragrunt/global-edge/${{ inputs.env }}
+    env:
+      TG_STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
+      TG_STATE_DDB_TABLE: ${{ secrets.STATE_DDB_TABLE }}
+      TG_APP_PREFIX: ${{ secrets.APP_PREFIX }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ROLE_ARN: ${{ secrets.ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE_ARN" ]; then
+            echo "ROLE_ARN secret is empty or not set for this environment."
+            exit 1
+          fi
+          if [ -z "$TG_STATE_BUCKET" ]; then
+            echo "STATE_BUCKET is empty or not set."
+            exit 1
+          fi
+          if [ -z "$TG_STATE_DDB_TABLE" ]; then
+            echo "STATE_DDB_TABLE is empty or not set."
+            exit 1
+          fi
+          if [ -z "$TG_APP_PREFIX" ]; then
+            echo "APP_PREFIX is empty or not set."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Install Terragrunt
+        run: |
+          set -euo pipefail
+          TG_VERSION="$(python3 - <<'PY'
+          import json
+          import urllib.request
+
+          url = "https://api.github.com/repos/gruntwork-io/terragrunt/releases?per_page=20"
+          with urllib.request.urlopen(url, timeout=20) as response:
+              releases = json.load(response)
+
+          for release in releases:
+              if not release.get("draft") and not release.get("prerelease"):
+                  print(release["tag_name"])
+                  break
+          else:
+              raise SystemExit("No stable Terragrunt release found.")
+          PY
+          )"
+          echo "Installing Terragrunt ${TG_VERSION}"
+          sudo curl -fsSL -o /usr/local/bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/${TG_VERSION}/terragrunt_linux_amd64"
+          sudo chmod +x /usr/local/bin/terragrunt
+          terragrunt --version
+
+      - name: Validate env directory exists
+        run: |
+          if [ ! -d "." ]; then
+            echo "Terragrunt directory not found for env: ${{ inputs.env }}"
+            exit 1
+          fi
+
+      - name: Run Terragrunt
+        run: |
+          set -euo pipefail
+          ACTION="${{ inputs.action }}"
+          PHASE="${{ inputs.phase }}"
+
+          if [ "$ACTION" = "destroy" ] && [ "$PHASE" != "all" ]; then
+            echo "For safety, destroy is only allowed with phase=all."
+            echo "This prevents dependency-order issues during teardown."
+            exit 1
+          fi
+
+          CMD="terragrunt run-all ${ACTION} --terragrunt-non-interactive"
+          case "$PHASE" in
+            all) ;;
+            ecs-initial) CMD="$CMD --terragrunt-include-dir */ecs-backend-initial/*" ;;
+            redis-global) CMD="$CMD --terragrunt-include-dir */redis-global" ;;
+            ecs-global) CMD="$CMD --terragrunt-include-dir */ecs-backend-global/*" ;;
+            api-edge) CMD="$CMD --terragrunt-include-dir */api-edge" ;;
+            app-bucket) CMD="$CMD --terragrunt-include-dir */app-bucket" ;;
+            frontend) CMD="$CMD --terragrunt-include-dir */frontend" ;;
+            *) echo "Unsupported phase: ${PHASE}"; exit 1 ;;
+          esac
+
+          if [ "$ACTION" = "apply" ] || [ "$ACTION" = "destroy" ]; then
+            CMD="$CMD -- -auto-approve"
+          fi
+
+          echo "Running: $CMD"
+          eval "$CMD"
