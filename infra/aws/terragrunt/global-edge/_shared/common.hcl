@@ -57,6 +57,7 @@ locals {
   geo_routing_map = {
     "US" = "us-east-1"
     "IE" = "eu-west-1"
+    "IN" = "ap-southeast-1"
     "SG" = "ap-southeast-1"
   }
 
