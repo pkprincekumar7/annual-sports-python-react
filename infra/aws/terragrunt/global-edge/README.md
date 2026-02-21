@@ -141,6 +141,14 @@ terragrunt run-all apply --terragrunt-include-dir "*/app-bucket"
 terragrunt run-all apply --terragrunt-include-dir "*/frontend"
 ```
 
+After `api-edge` apply, create a CloudFront invalidation for `/*` (recommended),
+especially when Lambda@Edge routing code or association changed.
+If edge behavior still appears stale after apply + invalidation, use this
+fallback:
+- Make a no-op change in `infra/aws/api-edge/lambda/origin-router.js.tmpl`
+  (for example, add a comment).
+- Re-apply `api-edge`, then create CloudFront invalidation `/*` again.
+
 ## Destroy Order
 
 ```bash
