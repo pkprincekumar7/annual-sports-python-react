@@ -7,7 +7,7 @@ locals {
 }
 
 terraform {
-  source = "../../../../../app-bucket"
+  source = "../../../../app-bucket"
 }
 
 dependency "backend_us_east_1" {

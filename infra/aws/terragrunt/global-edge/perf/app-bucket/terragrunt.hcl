@@ -11,7 +11,7 @@ terraform {
 }
 
 dependency "backend_us_east_1" {
-  config_path = "../ecs-backend-global/us-east-1"
+  config_path = "../ecs-backend/us-east-1"
   mock_outputs = {
     task_role_arns = {
       "identity-service" = "arn:aws:iam::123456789012:role/mock-identity"
@@ -21,7 +21,7 @@ dependency "backend_us_east_1" {
 }
 
 dependency "backend_eu_west_1" {
-  config_path = "../ecs-backend-global/eu-west-1"
+  config_path = "../ecs-backend/eu-west-1"
   mock_outputs = {
     task_role_arns = {
       "identity-service" = "arn:aws:iam::123456789012:role/mock-identity-eu"
@@ -31,7 +31,7 @@ dependency "backend_eu_west_1" {
 }
 
 dependency "backend_ap_southeast_1" {
-  config_path = "../ecs-backend-global/ap-southeast-1"
+  config_path = "../ecs-backend/ap-southeast-1"
   mock_outputs = {
     task_role_arns = {
       "identity-service" = "arn:aws:iam::123456789012:role/mock-identity-ap"

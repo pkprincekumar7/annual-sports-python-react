@@ -31,9 +31,7 @@ on:
         type: choice
         options:
           - all
-          - ecs-initial
-          - redis-global
-          - ecs-global
+          - ecs-backend
           - api-edge
           - app-bucket
           - frontend
@@ -137,9 +135,7 @@ jobs:
           CMD="terragrunt run-all ${ACTION} --terragrunt-non-interactive"
           case "$PHASE" in
             all) ;;
-            ecs-initial) CMD="$CMD --terragrunt-include-dir */ecs-backend-initial/*" ;;
-            redis-global) CMD="$CMD --terragrunt-include-dir */redis-global" ;;
-            ecs-global) CMD="$CMD --terragrunt-include-dir */ecs-backend-global/*" ;;
+            ecs-backend) CMD="$CMD --terragrunt-include-dir */ecs-backend/*" ;;
             api-edge) CMD="$CMD --terragrunt-include-dir */api-edge" ;;
             app-bucket) CMD="$CMD --terragrunt-include-dir */app-bucket" ;;
             frontend) CMD="$CMD --terragrunt-include-dir */frontend" ;;

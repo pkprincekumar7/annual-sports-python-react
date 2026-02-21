@@ -3,220 +3,159 @@
 This guide sets up **three regional backends** behind **one global API domain**
 using a **single CloudFront distribution** with multi-origin routing.
 
+## Architecture used by this guide
+
+- Regional `ecs-backend` in `us-east-1`, `eu-west-1`, `ap-southeast-1`
+- **Regional Redis per region** (created by each `ecs-backend` stack)
+- Global API domain via `api-edge` (`CloudFront + Lambda@Edge`)
+- Global app bucket policy via `app-bucket`
+- Frontend in `us-east-1`
+
+Important:
+- `redis-global` is removed from this architecture.
+- `redis_endpoint_override` is not used.
+
 ## When to use this
-- You want one API domain for all regions.
-- You want active/active routing at the edge.
+
+- You want one API domain (for example `sports-dev-api.learning-dev.com`)
+- You want edge-based region routing with one CloudFront API distribution
+- You want low-latency, write-capable Redis cache per region
 
 ## Prerequisites
+
 - Terraform 1.13+
 - AWS CLI configured
-- Route 53 hosted zone for your domains
-- ACM certificate in `us-east-1` for the API domain
+- Route53 hosted zone for your domains
+- ACM certificate in `us-east-1` for API CloudFront domain
 - Existing global app bucket (`app_s3_bucket_name`)
 
 ## Global prerequisites (one-time)
-1) **Create the global app bucket**
-   - Enable versioning and default encryption (SSE-S3 or SSE-KMS).
-   - Block public access.
-2) **Create a CloudFront logs bucket** (global)
-3) **Create IAM OIDC role** for GitHub Actions (per environment).
-4) **Set GitHub Environment secrets** (per env):
+
+1) Create global app bucket
+2) Create CloudFront logs bucket
+3) Create IAM OIDC role for GitHub Actions (per environment)
+4) Set GitHub Environment secrets (per env):
    - `STATE_BUCKET`, `STATE_DDB_TABLE`, `APP_PREFIX`, `ROLE_ARN`
    - `TFVARS_ECS_BACKEND_US_EAST_1`, `TFVARS_ECS_BACKEND_EU_WEST_1`, `TFVARS_ECS_BACKEND_AP_SOUTHEAST_1`
    - `TFVARS_FRONTEND`
    - `TFVARS_API_EDGE`
-   - `TFVARS_REDIS_GLOBAL`
    - `TFVARS_APP_BUCKET`
-5) **Workflow notes**
+5) Workflow notes:
    - Terraform state region is fixed to `us-east-1` in workflows.
-   - `ROLE_ARN` is read from GitHub Environment secrets (no workflow input).
+   - `ROLE_ARN` is read from GitHub Environment secrets.
 
-## Terragrunt dependency graph (output flow)
-
-Terragrunt transfers values between stacks via remote state + `dependency` blocks.
-Each arrow below means "downstream stack reads outputs from upstream stack state".
+## Dependency graph (output flow)
 
 ```text
-ecs-backend-initial/us-east-1  --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
-ecs-backend-initial/eu-west-1  --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
-ecs-backend-initial/ap-southeast-1 --(vpc_id, private_subnet_ids, ecs_tasks_security_group_id)--> redis-global
+ecs-backend/us-east-1  --(api_gateway_endpoint)--> api-edge
+ecs-backend/eu-west-1  --(api_gateway_endpoint)--> api-edge
+ecs-backend/ap-southeast-1 --(api_gateway_endpoint)--> api-edge
 
-redis-global --(primary_endpoint / eu_west_1_endpoint / ap_southeast_1_endpoint)--> ecs-backend-global/{region}
-
-ecs-backend-global/us-east-1  --(api_gateway_endpoint)--> api-edge
-ecs-backend-global/eu-west-1  --(api_gateway_endpoint)--> api-edge
-ecs-backend-global/ap-southeast-1 --(api_gateway_endpoint)--> api-edge
-
-ecs-backend-global/us-east-1  --(task_role_arns)--> app-bucket
-ecs-backend-global/eu-west-1  --(task_role_arns)--> app-bucket
-ecs-backend-global/ap-southeast-1 --(task_role_arns)--> app-bucket
-
-frontend (independent from backend dependencies)
+ecs-backend/us-east-1  --(task_role_arns)--> app-bucket
+ecs-backend/eu-west-1  --(task_role_arns)--> app-bucket
+ecs-backend/ap-southeast-1 --(task_role_arns)--> app-bucket
 ```
-
-Notes:
-- `api-edge` depends on all three `ecs-backend-global` regional stacks.
-- `app-bucket` depends on task roles from all three `ecs-backend-global` regional stacks.
-- `frontend` does not consume backend stack outputs directly in Terragrunt.
 
 ## Step 1: Regional backend (repeat per region)
+
 For each region: `us-east-1`, `eu-west-1`, `ap-southeast-1`
 
-1) **Set unique regional API domains (optional)**
-   - Optional when using global edge; can be empty or region-specific
-   - Examples: `sports-dev-api-us.learning-dev.com`, `sports-dev-api-eu.learning-dev.com`
-2) **Disable regional CloudFront and initialize regional tfvars**
-   - Start from `infra/aws/ecs-backend/tfvars/<env>.tfvars.example` and set all required keys.
-   - Recommended baseline (adjust values per env and region):
-```hcl
-# Core
-aws_region     = "us-east-1"
-aws_account_id = "123456789012"
-env            = "dev"
-app_prefix     = "as"
+1) Configure tfvars from `infra/aws/ecs-backend/tfvars/<env>.tfvars.example`
+   - Use the example file as the source of truth for all variables.
+   - Refer to `infra/aws/ecs-backend/README.md` for variable details.
+2) Keep `cloudfront_enabled = false` (global edge mode)
+3) Apply `ecs-backend-terraform.yml` with `action=apply`
+4) Collect outputs:
+   - `api_gateway_endpoint` (for `api-edge`)
+   - `task_role_arns` (for `app-bucket`)
+5) Deploy backend services (`ecs-backend-deploy.yml`) if needed
 
-# Networking
-vpc_cidr           = "10.10.0.0/16"
-availability_zones = ["us-east-1a", "us-east-1b"]
-public_subnets     = ["10.10.1.0/24", "10.10.2.0/24"]
-private_subnets    = ["10.10.11.0/24", "10.10.12.0/24"]
+## Step 1a: Secrets replication (global)
 
-# Domains & certificates (global-edge mode)
-cloudfront_enabled  = false
-api_domain          = "sports-dev-api-us.learning-dev.com" # optional; not used by global edge stack
-acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/<alb-cert>"
+Run `replicate-secrets.yml`:
+- after initial backend applies
+- after any Secrets Manager changes in source region
 
-# Logging buckets
-alb_access_logs_bucket_name = "your-alb-logs-bucket"
+This keeps all regional secret values synchronized.
 
-# Global app bucket
-app_s3_bucket_name = "your-app-bucket"
+### Redis auth token note
 
-# CORS
-apigw_cors_allowed_origins = ["https://sports-dev.your-domain.com"]
+- `redis_auth_token_bootstrap` initializes regional secrets if empty.
+- Keep the Redis token value consistent across regions via replication.
+- If token value changes:
+  1) Update source region secret
+  2) Run `replicate-secrets.yml`
+  3) Re-apply affected regional `ecs-backend` stacks
+  4) Re-deploy/restart ECS services
 
-# Email + secrets bootstrap (example)
-email_provider              = "gmail"
-gmail_user                  = "your-email@your-domain.com"
-email_from                  = "no-reply@your-domain.com"
+## Step 2: Global API Edge
 
-# Secrets bootstrap (sample value; only used if Redis secret is empty)
-redis_auth_token_bootstrap  = "replace-with-sample-redis-token"
-
-# Services map is required (use the full map from tfvars example)
-services = { ... }
-```
-   - Keep the `services` map complete (all services) exactly like the example file.
-3) **Apply**
-   - Run `ecs-backend-terraform.yml` with `action=apply`.
-4) **Replicate secrets (recommended immediately after apply)**
-   - Run `replicate-secrets.yml` for the same environment so newly initialized/updated secrets are synchronized across regions.
-5) **Collect outputs**
-   - `vpc_id`, `private_subnet_ids`, `ecs_tasks_security_group_id`
-   - `api_gateway_endpoint` (for `api-edge` origin_domains)
-   - `task_role_arns` (for `app-bucket` policy)
-
-## Step 2: Global Redis
-1) **Prepare tfvars for `redis-global`**
-   - `primary_region = "us-east-1"`
-   - `app_prefix`, `env`
-   - `primary_vpc_id`, `primary_subnet_ids`, `primary_ecs_sg_id`
-   - `enable_eu_west_1 = true` with `eu_west_1_vpc_id`, `eu_west_1_subnet_ids`, `eu_west_1_ecs_sg_id`
-   - `enable_ap_southeast_1 = true` with `ap_southeast_1_vpc_id`, `ap_southeast_1_subnet_ids`, `ap_southeast_1_ecs_sg_id`
-   - `redis_auth_token` (must match the value used by ECS tasks)
-   - Use **private subnet IDs only** for all `*_subnet_ids` values (do not use public subnets).
-   - Recommended source: `private_subnet_ids` output from each regional `ecs-backend` stack.
-   - `primary_ecs_sg_id`, `eu_west_1_ecs_sg_id`, and `ap_southeast_1_ecs_sg_id` are required when their regions are enabled.
-   - Recommended source: `ecs_tasks_security_group_id` output from each regional `ecs-backend` stack.
-2) **Apply `redis-global-terraform.yml`**
-3) **Record the regional endpoints**
-   - Outputs: `primary_endpoint`, `eu_west_1_endpoint`, `ap_southeast_1_endpoint`
-4) **Use matching regional endpoint in each backend**
-   - `us-east-1` backend → `redis_endpoint_override = primary_endpoint`
-   - `eu-west-1` backend → `redis_endpoint_override = eu_west_1_endpoint`
-   - `ap-southeast-1` backend → `redis_endpoint_override = ap_southeast_1_endpoint`
-   - Important: `redis_endpoint_override` must be the Redis host only (no scheme and no port).
-   - Correct: `master.as-dev-redis-global.xxxxxx.use1.cache.amazonaws.com`
-   - Incorrect: `rediss://master.as-dev-redis-global.xxxxxx.use1.cache.amazonaws.com:6379`
-   - Why: the ECS backend module appends scheme/auth/port when composing `REDIS_URL`; including `:6379` here causes malformed URLs like `...:6379:6379/...`.
-
-## Step 3: Re-apply regional backends (repeat per region)
-1) **Point Redis to global datastore**
-   - `redis_endpoint_override = <regional-redis-endpoint>`
-   - Use hostname only for `<regional-redis-endpoint>` (do not include protocol or port).
-2) **Apply**
-   - Run `ecs-backend-terraform.yml` with `action=apply`.
-   - This re-apply removes the temporary regional Redis and switches services to the global datastore.
-3) **Replicate secrets (recommended immediately after re-apply)**
-   - Run `replicate-secrets.yml` for the same environment if any Secrets Manager values changed (especially Redis token).
-4) **Deploy backend services**
-   - Run `ecs-backend-deploy.yml` per service for each region.
-
-## Step 4: Global API Edge
 1) Apply `api-edge-terraform.yml` in `us-east-1`
 2) Provide:
-   - `origin_domains` map with API Gateway endpoints from each region
-   - `default_origin_id`
-   - `origin_routing_header` + `origin_routing_map` (header value → origin ID)
-   - `geo_routing_enabled = true` + `geo_routing_map` (country code → origin ID)
-   - `api_domain` (e.g., `sports-dev-api.learning-dev.com`)
-   - `route53_zone_id` (required if `api_domain` is set)
-   - `cloudfront_acm_certificate_arn` (us-east-1, required if `api_domain` is set)
-   - `cloudfront_logs_bucket_name` (required if logging enabled)
-3) Create CloudFront invalidation (recommended after apply)
-   1. Open AWS Console → CloudFront.
-   2. Go to Distributions.
-   3. Open the distribution with alias `sports-dev-api.learning-dev.com` (or your API domain).
-   4. Open the Invalidation tab.
-   5. Click Create invalidation.
-   6. In Object paths, enter `/*`.
-   7. Click Create invalidation.
-   8. Wait until invalidation status is Completed.
-   - Troubleshooting fallback (only if edge keeps serving stale Lambda behavior):
-     make a no-op change in `infra/aws/api-edge/lambda/origin-router.js.tmpl` (for example, a comment),
-     re-apply `api-edge-terraform.yml`, then invalidate `/*` again.
-4) Route 53 will point the API domain to the global CloudFront distribution.
+   - Use `infra/aws/api-edge/tfvars/<env>.tfvars.example` as the source of truth.
+   - Set `origin_domains` from regional `api_gateway_endpoint` outputs.
+   - Refer to `infra/aws/api-edge/README.md` for variable details.
+3) Route53 points API domain to global CloudFront distribution
+4) Create CloudFront invalidation (recommended after apply):
+   1. Open AWS Console → CloudFront
+   2. Go to Distributions
+   3. Open distribution with alias `sports-dev-api.learning-dev.com` (or your API domain)
+   4. Open Invalidation tab
+   5. Click Create invalidation
+   6. Enter `/*` in Object paths
+   7. Click Create invalidation
+   8. Wait until status is Completed
 
-## Step 5: App bucket policy (global)
+Troubleshooting fallback:
+- If edge behavior appears stale after apply + invalidation:
+  - make a no-op change in `infra/aws/api-edge/lambda/origin-router.js.tmpl`
+  - re-apply `api-edge-terraform.yml`
+  - invalidate `/*` again
+
+## Step 3: App bucket policy (global)
+
 1) Apply `app-bucket-terraform.yml` with:
-   - `bucket_name = app_s3_bucket_name`
-   - `task_role_arns` from each regional `ecs-backend` output
-2) **Confirm access**
-   - Ensure ECS tasks can read/write objects via pre-signed URLs.
+   - tfvars based on `infra/aws/app-bucket/tfvars/<env>.tfvars.example`
+   - `task_role_arns` from all regional backend outputs
+   - Refer to `infra/aws/app-bucket/README.md` for variable details.
+2) Confirm ECS tasks can access objects
 
-## Step 5a: Secrets replication (global)
-Run `replicate-secrets.yml` after any Secrets Manager changes in the source
-region to keep all regional secrets in sync.
+## Step 4: Frontend (single region)
 
-### Redis auth token rotation
-- Keep one shared Redis token value across:
-  - `redis-global` variable `redis_auth_token`
-  - Secrets Manager `redis_auth_token` secret in each region
-- If token value changes:
-  1) Update Secrets Manager in source region and replicate (`replicate-secrets.yml`)
-  2) Re-apply `redis-global-terraform.yml` with new `redis_auth_token`
-  3) Re-deploy/restart ECS services in each region so tasks pick up the new secret value
+1) Apply `frontend-terraform.yml` in `us-east-1`
+   - Use `infra/aws/frontend/tfvars/<env>.tfvars.example`.
+   - Refer to `infra/aws/frontend/README.md` for variable details.
+2) Deploy frontend
+3) Set `VITE_API_URL = https://sports-dev-api.learning-dev.com`
 
-## Step 6: Frontend (single region)
-1) Set frontend tfvars:
-   - `aws_region = "us-east-1"`
-   - `bucket_name` = S3 bucket for frontend assets
-   - `domain` (e.g., `sports-dev.learning-dev.com`)
-   - `route53_zone_id` = hosted zone (required if `domain` is set)
-   - `cloudfront_acm_certificate_arn` = us-east-1 certificate ARN
-2) Apply `frontend-terraform.yml`.
-3) **Deploy frontend**
-   - Run `frontend-deploy.yml`.
-4) Set `VITE_API_URL = https://sports-dev-api.learning-dev.com`
+## Validation checklist
+
+- Requests route to expected region per `geo_routing_map` / routing header.
+- Regional backend logs appear in intended region.
+- Each region's Redis endpoint is region-local in ECS `REDIS_URL`.
+- API returns healthy responses from frontend origin.
 
 ## Destroy order
-1) Frontend (optional)
+
+1) Frontend
 2) `api-edge`
-3) `app-bucket` policy
-4) `redis-global`
-5) Regional `ecs-backend`
+3) `app-bucket`
+4) Regional `ecs-backend`
+
+### Lambda@Edge destroy behavior (important)
+
+- During `api-edge` destroy, Lambda@Edge deletion can fail initially with an error like:
+  `InvalidParameterValueException: ... unable to delete ... because it is a replicated function`.
+- This is usually expected: CloudFront association removal must propagate globally before Lambda version deletion is allowed.
+- Typical timing is 10-30 minutes, but it can take longer.
+- Recommended approach:
+  1) Let the first destroy complete as far as possible (disassociation step)
+  2) Wait for propagation
+  3) Re-run destroy for `api-edge`
+- In practice this is often a two-pass teardown: pass 1 detaches from CloudFront, pass 2 deletes Lambda@Edge versions.
 
 ## Best practice notes
-- Keep **log buckets** separate from the global app bucket.
-- Keep **CloudFront + WAF** in `us-east-1`.
-- Prefer **geo routing** with a default fallback; keep header routing for testing.
+
+- Keep log buckets separate from app bucket.
+- Keep CloudFront + WAF in `us-east-1`.
+- Prefer geo routing + default fallback, use header routing for testing.

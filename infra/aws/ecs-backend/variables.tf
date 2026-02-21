@@ -286,12 +286,6 @@ variable "app_s3_bucket_name" {
   }
 }
 
-variable "redis_endpoint_override" {
-  type        = string
-  default     = ""
-  description = "Optional external Redis endpoint to use instead of creating regional Redis."
-}
-
 variable "redis_port" {
   type        = number
   default     = 6379

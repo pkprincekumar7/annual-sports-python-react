@@ -27,9 +27,6 @@ cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
 # App S3 bucket (read/write for all services)
 app_s3_bucket_name = "your-app-bucket"
 
-# Optional external Redis (global datastore)
-# redis_endpoint_override = "your-redis-endpoint"
-
 # CORS
 apigw_cors_allowed_origins = ["https://sports-stg.your-domain.com"]
 

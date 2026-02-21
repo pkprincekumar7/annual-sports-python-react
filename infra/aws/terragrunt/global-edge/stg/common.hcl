@@ -28,9 +28,6 @@ locals {
   email_from                 = local.shared.email_from
   redis_auth_token_bootstrap = local.shared.redis_auth_token_bootstrap
 
-  redis_auth_token = local.shared.redis_auth_token
-  redis_node_type  = local.shared.redis_node_type
-
   geo_routing_enabled = local.shared.geo_routing_enabled
   geo_routing_map = local.shared.geo_routing_map
 
