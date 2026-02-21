@@ -33,7 +33,7 @@ frontend (independent from backend dependencies)
 
 Notes:
 - `app-bucket` depends on task roles from all three regional `ecs-backend` stacks.
-- In per-region mode, `redis_endpoint_override` is not used.
+- Each region uses its own regional Redis managed by `ecs-backend`.
 - `frontend` does not consume backend stack outputs directly in Terragrunt.
 
 ## Prerequisites

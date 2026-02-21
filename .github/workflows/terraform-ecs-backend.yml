@@ -1,5 +1,5 @@
-name: ECS Backend Terraform
-run-name: ECS Backend Terraform (${{ inputs.action }}, ${{ inputs.env }}, ${{ inputs.aws_region }})
+name: Terraform ECS Backend
+run-name: Terraform ECS Backend (${{ inputs.action }}, ${{ inputs.env }}, ${{ inputs.aws_region }})
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ecs-backend-terraform-${{ inputs.env }}-${{ inputs.aws_region }}
+  group: terraform-ecs-backend-${{ inputs.env }}-${{ inputs.aws_region }}
   cancel-in-progress: false
 
 jobs:

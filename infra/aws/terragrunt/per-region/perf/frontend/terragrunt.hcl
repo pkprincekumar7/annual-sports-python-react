@@ -7,7 +7,7 @@ locals {
 }
 
 terraform {
-  source = "../../../../../frontend"
+  source = "../../../../frontend"
 }
 
 inputs = {

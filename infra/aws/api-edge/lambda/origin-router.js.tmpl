@@ -1,4 +1,3 @@
-// Lambda@Edge refresh marker: force new published version for reassociation.
 exports.handler = async function (event) {
   var request = event.Records[0].cf.request;
   var headers = request.headers || {};

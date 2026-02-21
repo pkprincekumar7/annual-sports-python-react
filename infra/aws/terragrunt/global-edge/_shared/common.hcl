@@ -50,9 +50,6 @@ locals {
   email_from                 = "no-reply@your-domain.com"
   redis_auth_token_bootstrap = "replace-with-sample-redis-token"
 
-  redis_auth_token = "replace-with-strong-shared-redis-token"
-  redis_node_type  = "cache.r6g.large"
-
   geo_routing_enabled = true
   geo_routing_map = {
     "US" = "us-east-1"

@@ -11,7 +11,7 @@ terraform {
 }
 
 dependency "backend_us_east_1" {
-  config_path = "../ecs-backend-global/us-east-1"
+  config_path = "../ecs-backend/us-east-1"
   mock_outputs = {
     api_gateway_endpoint = "https://mock-us.execute-api.us-east-1.amazonaws.com"
   }
@@ -19,7 +19,7 @@ dependency "backend_us_east_1" {
 }
 
 dependency "backend_eu_west_1" {
-  config_path = "../ecs-backend-global/eu-west-1"
+  config_path = "../ecs-backend/eu-west-1"
   mock_outputs = {
     api_gateway_endpoint = "https://mock-eu.execute-api.eu-west-1.amazonaws.com"
   }
@@ -27,7 +27,7 @@ dependency "backend_eu_west_1" {
 }
 
 dependency "backend_ap_southeast_1" {
-  config_path = "../ecs-backend-global/ap-southeast-1"
+  config_path = "../ecs-backend/ap-southeast-1"
   mock_outputs = {
     api_gateway_endpoint = "https://mock-ap.execute-api.ap-southeast-1.amazonaws.com"
   }

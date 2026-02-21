@@ -130,7 +130,7 @@ aws cloudfront get-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --id "<i
 4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `ROLE_ARN`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
-`.github/workflows/frontend-terraform.yml`.
+`.github/workflows/terraform-frontend.yml`.
 
 Workflow inputs:
 - `action`: `plan`, `apply`, or `destroy`
@@ -151,7 +151,7 @@ Example inputs:
 ## GitHub Actions (Deploy)
 
 This repo includes a manual workflow to build and deploy the frontend:
-`.github/workflows/frontend-deploy.yml`.
+`.github/workflows/build-deploy-frontend.yml`.
 
 Workflow inputs:
 - `env`: `dev`, `qa`, `stg`, `perf`, or `prod`

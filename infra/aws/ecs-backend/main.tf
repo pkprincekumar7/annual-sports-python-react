@@ -131,7 +131,7 @@ locals {
   redis_auth_token = var.redis_transit_encryption_enabled ? data.aws_secretsmanager_secret_version.redis_auth_token[0].secret_string : ""
   redis_scheme   = var.redis_transit_encryption_enabled ? "rediss" : "redis"
   redis_auth     = local.redis_auth_token != "" ? ":${urlencode(local.redis_auth_token)}@" : ""
-  redis_host     = var.redis_endpoint_override != "" ? var.redis_endpoint_override : aws_elasticache_replication_group.redis[0].primary_endpoint_address
+  redis_host     = aws_elasticache_replication_group.redis.primary_endpoint_address
   redis_base_url = "${local.redis_scheme}://${local.redis_auth}${local.redis_host}:${var.redis_port}"
 
   service_cpu = {

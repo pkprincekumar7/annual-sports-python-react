@@ -1,5 +1,5 @@
-name: ECS Backend Restart
-run-name: ECS Backend Restart (${{ inputs.env }}, ${{ inputs.aws_region }}, ${{ inputs.service }})
+name: Restart ECS Backend
+run-name: Restart ECS Backend (${{ inputs.env }}, ${{ inputs.aws_region }}, ${{ inputs.service }})
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ecs-backend-restart-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
+  group: restart-ecs-backend-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
   cancel-in-progress: false
 
 jobs:

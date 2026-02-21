@@ -1,5 +1,5 @@
-name: ECS Backend Deploy
-run-name: ECS Backend Deploy (${{ inputs.env }}, ${{ inputs.aws_region }}, ${{ inputs.service }})
+name: Build Deploy ECS Backend
+run-name: Build Deploy ECS Backend (${{ inputs.execution_mode }}, ${{ inputs.env }}, ${{ inputs.aws_region }}, ${{ inputs.service }})
 
 on:
   workflow_dispatch:
@@ -38,13 +38,21 @@ on:
           - scheduling-service
           - scoring-service
           - reporting-service
+      execution_mode:
+        description: "Choose build only or build and deploy"
+        required: true
+        default: "build_and_deploy"
+        type: choice
+        options:
+          - build_only
+          - build_and_deploy
 
 permissions:
   id-token: write
   contents: read
 
 concurrency:
-  group: ecs-backend-deploy-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
+  group: build-deploy-ecs-backend-${{ inputs.env }}-${{ inputs.aws_region }}-${{ inputs.service }}
   cancel-in-progress: false
 
 jobs:
@@ -128,6 +136,7 @@ jobs:
           docker push "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${NAME_PREFIX}-${SERVICE}:${IMAGE_TAG}"
 
   deploy:
+    if: ${{ inputs.execution_mode == 'build_and_deploy' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.env }}
     needs: build_push

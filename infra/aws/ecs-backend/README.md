@@ -384,7 +384,7 @@ Repeat with `qa`, `stg`, `perf`, or `prod` by swapping the backend/tfvars files
 4) Name the role (e.g., `github-terraform`) and **copy the Role ARN** for `ROLE_ARN`.
 
 This repo includes a manual workflow to run Terraform via GitHub Actions:
-`.github/workflows/ecs-backend-terraform.yml`.
+`.github/workflows/terraform-ecs-backend.yml`.
 
 Workflow inputs:
 - `action`: `plan`, `apply`, or `destroy`
@@ -412,9 +412,9 @@ Example inputs:
 ## GitHub Actions (Deploy)
 
 This repo includes a manual workflow to build, push, and deploy ECS services:
-`.github/workflows/ecs-backend-deploy.yml`.
+`.github/workflows/build-deploy-ecs-backend.yml`.
 It also includes a restart-only workflow:
-`.github/workflows/ecs-backend-restart.yml`.
+`.github/workflows/restart-ecs-backend.yml`.
 
 Note: the deploy/restart workflows use a workflow-level `APP_PREFIX`. If you
 change `app_prefix` in tfvars, update `APP_PREFIX` in those workflows or move it
@@ -461,32 +461,22 @@ This stack supports both modes via tfvars:
   - `cloudfront_enabled = true`
   - `api_domain` set to a regional API domain
   - `cloudfront_acm_certificate_arn` set (us-east-1)
-  - `redis_endpoint_override` not set (regional Redis is created)
 - **Global-edge mode**
   - `cloudfront_enabled = false`
   - `api_domain` can be empty or set (not used)
   - `cloudfront_acm_certificate_arn` not required
-  - `redis_endpoint_override` set to the regional global-datastore endpoint
 
 ## Multi-Region Active/Active (Global Edge)
 To run active/active behind one domain:
-1) Create the global Redis stack (`infra/aws/redis-global`) and record the regional endpoints.
-2) Apply `ecs-backend` in each region with:
+1) Apply `ecs-backend` in each region with:
    - `cloudfront_enabled = false`
-   - `redis_endpoint_override` set to the regional Redis endpoint
+2) Each region provisions and uses its own regional Redis.
 3) Apply the global edge stack (`infra/aws/api-edge`) and point your domain to it.
 4) Apply the app bucket policy stack (`infra/aws/app-bucket`) with task role ARNs.
-
-Use the ECS backend outputs for VPC and security group IDs when wiring the
-global Redis stack:
-- `vpc_id`
-- `private_subnet_ids`
-- `ecs_tasks_security_group_id`
 
 Use the ECS backend output `task_role_arns` to grant access in the global app
 bucket policy stack.
 
 ## Outputs Used by Other Stacks
-- For `redis-global`: `vpc_id`, `private_subnet_ids`, `ecs_tasks_security_group_id`
 - For `api-edge`: `api_gateway_endpoint`
 - For `app-bucket`: `task_role_arns`
