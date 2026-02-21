@@ -1,12 +1,12 @@
 // Lambda@Edge refresh marker: force new published version for reassociation.
-function handler(event) {
-  var request = event.request;
+exports.handler = async function (event) {
+  var request = event.Records[0].cf.request;
   var headers = request.headers || {};
 
   var headerName = "${origin_routing_header}".toLowerCase();
   var headerValue = "";
-  if (headers[headerName] && headers[headerName].value) {
-    headerValue = headers[headerName].value;
+  if (headers[headerName] && headers[headerName][0] && headers[headerName][0].value) {
+    headerValue = headers[headerName][0].value;
   }
 
   var originMap = ${origin_map_json};
@@ -19,7 +19,7 @@ function handler(event) {
 
   if (!originId && geoEnabled) {
     var countryHeader = headers["cloudfront-viewer-country"];
-    var countryCode = countryHeader && countryHeader.value ? countryHeader.value.toUpperCase() : "";
+    var countryCode = countryHeader && countryHeader[0] && countryHeader[0].value ? countryHeader[0].value.toUpperCase() : "";
     if (countryCode && geoMap[countryCode]) {
       originId = geoMap[countryCode];
     }
@@ -44,11 +44,12 @@ function handler(event) {
         path: "",
         sslProtocols: ["TLSv1.2"],
         readTimeout: 30,
-        keepaliveTimeout: 5
+        keepaliveTimeout: 5,
+        customHeaders: {}
       }
     };
-    request.headers["host"] = { value: domainName };
+    request.headers["host"] = [{ key: "host", value: domainName }];
   }
 
   return request;
-}
+};
