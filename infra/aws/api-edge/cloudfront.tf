@@ -39,7 +39,7 @@ resource "aws_cloudfront_distribution" "api" {
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
 
     lambda_function_association {
-      event_type = "viewer-request"
+      event_type = "origin-request"
       lambda_arn = aws_lambda_function.origin_router.qualified_arn
       include_body = false
     }
