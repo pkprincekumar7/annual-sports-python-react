@@ -52,25 +52,22 @@ resource "aws_lambda_permission" "origin_router_get_function" {
   provider      = aws.us_east_1
   statement_id  = "AllowExecutionFromEdge"
   action        = "lambda:GetFunction"
-  function_name = aws_lambda_function.origin_router.function_name
+  function_name = aws_lambda_function.origin_router.qualified_arn
   principal     = "edgelambda.amazonaws.com"
-  qualifier     = aws_lambda_function.origin_router.version
 }
 
 resource "aws_lambda_permission" "origin_router_enable_replication" {
   provider      = aws.us_east_1
   statement_id  = "AllowEdgeReplicationEnable"
   action        = "lambda:EnableReplication"
-  function_name = aws_lambda_function.origin_router.function_name
+  function_name = aws_lambda_function.origin_router.qualified_arn
   principal     = "replicator.lambda.amazonaws.com"
-  qualifier     = aws_lambda_function.origin_router.version
 }
 
 resource "aws_lambda_permission" "origin_router_disable_replication" {
   provider      = aws.us_east_1
   statement_id  = "AllowEdgeReplicationDisable"
   action        = "lambda:DisableReplication"
-  function_name = aws_lambda_function.origin_router.function_name
+  function_name = aws_lambda_function.origin_router.qualified_arn
   principal     = "replicator.lambda.amazonaws.com"
-  qualifier     = aws_lambda_function.origin_router.version
 }
