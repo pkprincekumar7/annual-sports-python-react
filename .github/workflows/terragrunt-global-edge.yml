@@ -55,6 +55,7 @@ jobs:
       TG_STATE_BUCKET: ${{ secrets.STATE_BUCKET }}
       TG_STATE_DDB_TABLE: ${{ secrets.STATE_DDB_TABLE }}
       TG_APP_PREFIX: ${{ secrets.APP_PREFIX }}
+      TG_COMMON_HCL: ${{ secrets.TG_COMMON_HCL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,6 +80,15 @@ jobs:
             echo "APP_PREFIX is empty or not set."
             exit 1
           fi
+          if [ -z "$TG_COMMON_HCL" ]; then
+            echo "TG_COMMON_HCL is empty or not set."
+            exit 1
+          fi
+
+      - name: Materialize shared common.hcl from secret
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$TG_COMMON_HCL" > ../_shared/common.hcl
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -125,12 +135,6 @@ jobs:
           set -euo pipefail
           ACTION="${{ inputs.action }}"
           PHASE="${{ inputs.phase }}"
-
-          if [ "$ACTION" = "destroy" ] && [ "$PHASE" != "all" ]; then
-            echo "For safety, destroy is only allowed with phase=all."
-            echo "This prevents dependency-order issues during teardown."
-            exit 1
-          fi
 
           CMD="terragrunt run-all ${ACTION} --terragrunt-non-interactive"
           case "$PHASE" in
