@@ -19,7 +19,7 @@ flowchart TB
 
     subgraph APIEdge["api-edge (Global API Domain)"]
         CF_API[CloudFront]
-        LAMBDA[Lambda@Edge]
+        LAMBDA["Lambda@Edge"]
         CF_API --> LAMBDA
     end
 
