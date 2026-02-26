@@ -9,6 +9,13 @@ resource "kubernetes_deployment_v1" "services" {
   }
   spec {
     replicas = 1
+    strategy {
+      type = "RollingUpdate"
+      rolling_update {
+        max_surge       = var.deployment_max_surge
+        max_unavailable = var.deployment_max_unavailable
+      }
+    }
     selector {
       match_labels = {
         app = each.key
@@ -22,6 +29,16 @@ resource "kubernetes_deployment_v1" "services" {
       }
       spec {
         service_account_name = kubernetes_service_account_v1.services[each.key].metadata[0].name
+        topology_spread_constraint {
+          max_skew           = 1
+          topology_key      = "topology.kubernetes.io/zone"
+          when_unsatisfiable = "ScheduleAnyway"
+          label_selector {
+            match_labels = {
+              app = each.key
+            }
+          }
+        }
         container {
           name  = each.key
           image = "${local.image_prefix}/${local.name_prefix}-${each.key}:${var.image_tag}"
@@ -40,7 +57,7 @@ resource "kubernetes_deployment_v1" "services" {
           }
           readiness_probe {
             http_get {
-              path = "/health"
+              path = each.value.health_path
               port = each.value.port
             }
             initial_delay_seconds = 10
@@ -48,7 +65,7 @@ resource "kubernetes_deployment_v1" "services" {
           }
           liveness_probe {
             http_get {
-              path = "/health"
+              path = each.value.health_path
               port = each.value.port
             }
             initial_delay_seconds = 30

@@ -15,12 +15,25 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
   cluster_enabled_log_types                = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
-  eks_managed_node_groups = {
-    default = {
-      instance_types = var.node_instance_types
-      min_size       = var.node_min_size
-      max_size       = var.node_max_size
-      desired_size   = var.node_desired_size
-    }
-  }
+  eks_managed_node_groups = merge(
+    {
+      default = {
+        instance_types = var.node_instance_types
+        min_size       = var.node_min_size
+        max_size       = var.node_max_size
+        desired_size   = var.node_desired_size
+      }
+    },
+    var.enable_compute_node_group ? {
+      compute = {
+        instance_types = var.compute_node_instance_types
+        min_size       = var.compute_node_min_size
+        max_size       = var.compute_node_max_size
+        desired_size   = var.compute_node_desired_size
+        labels = {
+          "workload-type" = "compute"
+        }
+      }
+    } : {}
+  )
 }
