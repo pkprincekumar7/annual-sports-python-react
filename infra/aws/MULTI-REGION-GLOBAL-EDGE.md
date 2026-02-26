@@ -3,6 +3,89 @@
 This guide sets up **three regional backends** behind **one global API domain**
 using a **single CloudFront distribution** with multi-origin routing.
 
+## Architecture diagram
+
+```mermaid
+flowchart TB
+    subgraph Users["Users"]
+        U[Browser / Client]
+    end
+
+    subgraph Frontend["Frontend (us-east-1)"]
+        CF_F[CloudFront]
+        S3_F[S3 Static]
+        S3_F --> CF_F
+    end
+
+    subgraph APIEdge["api-edge (Global API Domain)"]
+        CF_API[CloudFront]
+        LAMBDA[Lambda@Edge]
+        CF_API --> LAMBDA
+    end
+
+    subgraph Region_US["us-east-1 (Regional Backend)"]
+        APIGW_US[API Gateway]
+        VPC_US[VPC Link]
+        ALB_US[Private ALB]
+        ECS_US[ECS Tasks]
+        Redis_US[(Redis)]
+        SM_US[Secrets Manager]
+        APIGW_US --> VPC_US --> ALB_US --> ECS_US
+        ECS_US --> Redis_US
+        ECS_US --> SM_US
+    end
+
+    subgraph Region_EU["eu-west-1 (Regional Backend)"]
+        APIGW_EU[API Gateway]
+        VPC_EU[VPC Link]
+        ALB_EU[Private ALB]
+        ECS_EU[ECS Tasks]
+        Redis_EU[(Redis)]
+        SM_EU[Secrets Manager]
+        APIGW_EU --> VPC_EU --> ALB_EU --> ECS_EU
+        ECS_EU --> Redis_EU
+        ECS_EU --> SM_EU
+    end
+
+    subgraph Region_AP["ap-southeast-1 (Regional Backend)"]
+        APIGW_AP[API Gateway]
+        VPC_AP[VPC Link]
+        ALB_AP[Private ALB]
+        ECS_AP[ECS Tasks]
+        Redis_AP[(Redis)]
+        SM_AP[Secrets Manager]
+        APIGW_AP --> VPC_AP --> ALB_AP --> ECS_AP
+        ECS_AP --> Redis_AP
+        ECS_AP --> SM_AP
+    end
+
+    subgraph Global["Global"]
+        AppBucket[(App S3 Bucket)]
+    end
+
+    subgraph SecretsReplication["Secrets Replication"]
+        SM_US -.->|replicate-secrets| SM_EU
+        SM_US -.->|replicate-secrets| SM_AP
+    end
+
+    U --> CF_F
+    U -->|API: sports-dev-api.learning-dev.com| CF_API
+    LAMBDA -->|geo / header routing| APIGW_US
+    LAMBDA -->|geo / header routing| APIGW_EU
+    LAMBDA -->|geo / header routing| APIGW_AP
+
+    ECS_US -->|task_role_arns| AppBucket
+    ECS_EU -->|task_role_arns| AppBucket
+    ECS_AP -->|task_role_arns| AppBucket
+```
+
+**Legend:**
+- **Frontend** – Single region (us-east-1); S3 + CloudFront; `VITE_API_URL` points to the global API domain.
+- **api-edge** – Global CloudFront + Lambda@Edge; single API domain; routes requests to regional API Gateways based on `geo_routing_map` or `origin_routing_header`.
+- **Regional Backend** – Per region: API Gateway → VPC Link → Private ALB → ECS tasks (`cloudfront_enabled = false`); each region has its own Redis and Secrets Manager.
+- **App S3 Bucket** – Global; grants access via `task_role_arns` from all three regional backends.
+- **Secrets Replication** – `replicate-secrets.yml` syncs secrets from source region to others.
+
 ## Architecture used by this guide
 
 - Regional `ecs-backend` in `us-east-1`, `eu-west-1`, `ap-southeast-1`
