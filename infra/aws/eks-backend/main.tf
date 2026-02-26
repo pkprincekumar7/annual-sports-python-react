@@ -2,40 +2,21 @@ provider "aws" {
   region = var.aws_region
 }
 
-locals {
-  services = {
-    "identity-service" = { port = 8001 }
-    "enrollment-service" = { port = 8002 }
-    "department-service" = { port = 8003 }
-    "sports-part-service" = { port = 8004 }
-    "event-config-service" = { port = 8005 }
-    "scheduling-service" = { port = 8006 }
-    "scoring-service" = { port = 8007 }
-    "reporting-service" = { port = 8008 }
-  }
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
 
-  redis_db_index = {
-    "identity-service"             = 0
-    "enrollment-service"           = 1
-    "department-service"           = 2
-    "sports-part-service" = 3
-    "event-config-service"  = 4
-    "scheduling-service"           = 5
-    "scoring-service"              = 6
-    "reporting-service"            = 7
-  }
+locals {
+  services = var.services
+
+  sorted_service_keys = sort(keys(local.services))
 
   ecr_repos = keys(local.services)
 
   service_url_env = {
-    IDENTITY_URL             = "http://identity-service:8001"
-    ENROLLMENT_URL           = "http://enrollment-service:8002"
-    DEPARTMENT_URL           = "http://department-service:8003"
-    SPORTS_PARTICIPATION_URL = "http://sports-part-service:8004"
-    EVENT_CONFIGURATION_URL  = "http://event-config-service:8005"
-    SCHEDULING_URL           = "http://scheduling-service:8006"
-    SCORING_URL              = "http://scoring-service:8007"
-    REPORTING_URL            = "http://reporting-service:8008"
+    for name, svc in local.services :
+    svc.url_env_name => "http://${name}:${svc.port}"
   }
 
   common_env = {
@@ -45,12 +26,15 @@ locals {
     LOG_LEVEL        = var.log_level
   }
 
-  name_prefix  = "as-${var.env}"
-  cluster_name = "annual-sports-${var.env}"
+  name_prefix         = "${var.app_prefix}-${var.env}"
+  iam_name_prefix     = "${local.name_prefix}-${var.aws_region}"
+  cluster_name        = "annual-sports-${var.env}"
+  secrets_kms_key_arn = var.secrets_kms_key_arn != "" ? var.secrets_kms_key_arn : (var.create_secrets_kms_key ? aws_kms_key.secrets[0].arn : null)
 
   secret_names = {
     jwt_secret         = "${local.name_prefix}-jwt"
     mongo_uri          = "${local.name_prefix}-mongo-uri"
+    redis_auth_token   = "${local.name_prefix}-redis-auth-token"
     gmail_app_password = "${local.name_prefix}-gmail-app-password"
     sendgrid_api_key   = "${local.name_prefix}-sendgrid-api-key"
     resend_api_key     = "${local.name_prefix}-resend-api-key"
@@ -58,14 +42,8 @@ locals {
   }
 
   database_names = {
-    "identity-service"             = "${local.name_prefix}-identity"
-    "enrollment-service"           = "${local.name_prefix}-enrollment"
-    "department-service"           = "${local.name_prefix}-department"
-    "sports-part-service" = "${local.name_prefix}-sports-part"
-    "event-config-service"  = "${local.name_prefix}-event-config"
-    "scheduling-service"           = "${local.name_prefix}-scheduling"
-    "scoring-service"              = "${local.name_prefix}-scoring"
-    "reporting-service"            = "${local.name_prefix}-reporting"
+    for name, svc in local.services :
+    name => "${local.name_prefix}-${svc.db_suffix}"
   }
 
   mongo_env = {
@@ -76,9 +54,9 @@ locals {
   }
 
   redis_env = {
-    for name, index in local.redis_db_index :
+    for name, svc in local.services :
     name => {
-      REDIS_URL = "${local.redis_base_url}/${index}"
+      REDIS_URL = "${local.redis_base_url}/${svc.redis_db_index}"
     }
   }
 
@@ -140,36 +118,62 @@ locals {
 
   image_prefix = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
 
-  redis_base_url = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:${aws_elasticache_cluster.redis.port}"
-  redis_url      = local.redis_base_url
+  redis_auth_token = var.redis_transit_encryption_enabled ? data.aws_secretsmanager_secret_version.redis_auth_token[0].secret_string : ""
+  redis_scheme     = var.redis_transit_encryption_enabled ? "rediss" : "redis"
+  redis_auth       = local.redis_auth_token != "" ? ":${urlencode(local.redis_auth_token)}@" : ""
+  redis_host       = aws_elasticache_replication_group.redis.primary_endpoint_address
+  redis_base_url   = "${local.redis_scheme}://${local.redis_auth}${local.redis_host}:${var.redis_port}"
+  redis_url        = local.redis_base_url
 
-  redis_name      = "${local.name_prefix}-redis"
-  alb_controller_name = "${local.name_prefix}-alb-controller"
+  redis_name           = "${local.name_prefix}-redis"
+  alb_controller_name  = "${local.name_prefix}-alb-controller"
 
-  api_paths = [
-    { path = "/identities", service = "identity-service", port = 8001 },
-    { path = "/enrollments", service = "enrollment-service", port = 8002 },
-    { path = "/departments", service = "department-service", port = 8003 },
-    { path = "/sports-participations", service = "sports-part-service", port = 8004 },
-    { path = "/event-configurations", service = "event-config-service", port = 8005 },
-    { path = "/schedulings", service = "scheduling-service", port = 8006 },
-    { path = "/scorings", service = "scoring-service", port = 8007 },
-    { path = "/reportings", service = "reporting-service", port = 8008 }
-  ]
+  healthcheck_path = length(local.services) > 0 ? values(local.services)[0].health_path : "/health"
 
-  ingress_hosts = {
-    for host in compact([var.api_domain]) :
-    host => host
-  }
+  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
 
-  alb_annotations = {
-    "kubernetes.io/ingress.class"            = "alb"
-    "alb.ingress.kubernetes.io/scheme"       = "internet-facing"
-    "alb.ingress.kubernetes.io/target-type"  = "ip"
-    "alb.ingress.kubernetes.io/load-balancer-name" = local.alb_name
-    "alb.ingress.kubernetes.io/certificate-arn" = var.acm_certificate_arn
-    "alb.ingress.kubernetes.io/listen-ports"    = "[{\"HTTP\":80},{\"HTTPS\":443}]"
-    "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
-    "alb.ingress.kubernetes.io/healthcheck-path" = "/health"
-  }
+  alb_load_balancer_attrs = join(",", compact(concat(
+    var.alb_access_logs_enabled && var.alb_access_logs_bucket_name != "" ? ["access_logs.s3.enabled=true", "access_logs.s3.bucket=${var.alb_access_logs_bucket_name}", "access_logs.s3.prefix=${var.alb_access_logs_prefix}"] : [],
+    var.alb_deletion_protection ? ["deletion_protection.enabled=true"] : []
+  )))
+
+  # Derive from services.path_patterns; strip * for Kubernetes Ingress Prefix path type
+  api_paths = flatten([
+    for name, svc in local.services : [
+      for p in svc.path_patterns : {
+        path    = replace(p, "*", "")
+        service = name
+        port    = svc.port
+      }
+    ]
+  ])
+
+  # When cloudfront_enabled: use empty host so ALB matches requests from API Gateway (any Host header)
+  # When cloudfront disabled: use api_domain if set, else empty host (matches ALB hostname or any)
+  ingress_hosts = var.cloudfront_enabled ? { "" = "" } : (var.api_domain != "" ? { (var.api_domain) = var.api_domain } : { "" = "" })
+
+  # When cloudfront_enabled: private ALB (API Gateway VPC Link connects); HTTP only (TLS at CloudFront)
+  # When cloudfront disabled: internet-facing ALB with optional HTTPS
+  alb_annotations = merge(
+    {
+      "kubernetes.io/ingress.class"                  = "alb"
+      "alb.ingress.kubernetes.io/scheme"             = var.cloudfront_enabled ? "internal" : "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"        = "ip"
+      "alb.ingress.kubernetes.io/load-balancer-name" = local.alb_name
+      "alb.ingress.kubernetes.io/healthcheck-path"   = local.healthcheck_path
+    },
+    var.cloudfront_enabled ? {
+      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\":80}]"
+    } : (var.acm_certificate_arn != "" ? {
+      "alb.ingress.kubernetes.io/certificate-arn" = var.acm_certificate_arn
+      "alb.ingress.kubernetes.io/listen-ports"   = "[{\"HTTP\":80},{\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/ssl-redirect"   = "443"
+      "alb.ingress.kubernetes.io/ssl-policy"    = var.alb_ssl_policy
+    } : {
+      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\":80}]"
+    }),
+    length(local.alb_load_balancer_attrs) > 0 ? {
+      "alb.ingress.kubernetes.io/load-balancer-attributes" = local.alb_load_balancer_attrs
+    } : {}
+  )
 }

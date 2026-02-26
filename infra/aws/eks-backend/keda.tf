@@ -77,8 +77,3 @@ resource "helm_release" "keda" {
     value = kubernetes_service_account_v1.keda.metadata[0].name
   }
 }
-
-data "aws_lb" "app" {
-  name       = local.alb_name
-  depends_on = [kubernetes_ingress_v1.alb]
-}

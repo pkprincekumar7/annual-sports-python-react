@@ -1,22 +1,119 @@
 # Example values for qa
-aws_region      = "us-east-1"
-aws_account_id  = "123456789012"
-env             = "qa"
-vpc_cidr        = "10.20.0.0/16"
+# Core
+aws_region     = "us-east-1"
+aws_account_id = "123456789012"
+env            = "qa"
+app_prefix     = "as"
 
+# Networking
+vpc_cidr = "10.20.0.0/16"
 availability_zones = ["us-east-1a", "us-east-1b"]
 public_subnets      = ["10.20.1.0/24", "10.20.2.0/24"]
 private_subnets     = ["10.20.11.0/24", "10.20.12.0/24"]
 
+# Domains & certificates
 api_domain = "sports-qa-api.your-domain.com"
+route53_zone_id = "Z1234567890"
 acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cert-id"
+cloudfront_acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-with-your-cloudfront-cert-id"
 
+# Private ALB → API Gateway → CloudFront → WAF (default; industry best practice)
+# cloudfront_enabled = true
+# waf_enabled = true
+# cloudfront_logs_bucket_name = "your-backend-cloudfront-logs-bucket"
+
+# Logging buckets (optional)
+# alb_access_logs_bucket_name = "your-alb-logs-bucket"
+
+# App S3 bucket (for IRSA grants; optional)
+# app_s3_bucket_name = "your-app-bucket"
+
+# Email
 email_provider = "gmail"
 gmail_user = "your-email@gmail.com"
 email_from = "no-reply@your-domain.com"
 
-# Optional KEDA scaling (enable after ALB target groups exist)
-# enable_keda_alb_scaling = true
+# Secrets bootstrap (sample value; only used if Redis secret is empty)
+redis_auth_token_bootstrap = "replace-with-sample-redis-token"
+
+# Services (same structure as ECS for consistency)
+services = {
+  "identity-service" = {
+    port = 8001
+    health_path = "/health"
+    tg_suffix = "id"
+    redis_db_index = 0
+    db_suffix = "identity"
+    url_env_name = "IDENTITY_URL"
+    path_patterns = ["/identities*"]
+  }
+  "enrollment-service" = {
+    port = 8002
+    health_path = "/health"
+    tg_suffix = "enr"
+    redis_db_index = 1
+    db_suffix = "enrollment"
+    url_env_name = "ENROLLMENT_URL"
+    path_patterns = ["/enrollments*"]
+  }
+  "department-service" = {
+    port = 8003
+    health_path = "/health"
+    tg_suffix = "dep"
+    redis_db_index = 2
+    db_suffix = "department"
+    url_env_name = "DEPARTMENT_URL"
+    path_patterns = ["/departments*"]
+  }
+  "sports-part-service" = {
+    port = 8004
+    health_path = "/health"
+    tg_suffix = "sp"
+    redis_db_index = 3
+    db_suffix = "sports-part"
+    url_env_name = "SPORTS_PARTICIPATION_URL"
+    path_patterns = ["/sports-participations*", "/sports-parts*"]
+  }
+  "event-config-service" = {
+    port = 8005
+    health_path = "/health"
+    tg_suffix = "evt"
+    redis_db_index = 4
+    db_suffix = "event-config"
+    url_env_name = "EVENT_CONFIGURATION_URL"
+    path_patterns = ["/event-configurations*", "/event-configs*"]
+  }
+  "scheduling-service" = {
+    port = 8006
+    health_path = "/health"
+    tg_suffix = "sch"
+    redis_db_index = 5
+    db_suffix = "scheduling"
+    url_env_name = "SCHEDULING_URL"
+    path_patterns = ["/schedulings*"]
+  }
+  "scoring-service" = {
+    port = 8007
+    health_path = "/health"
+    tg_suffix = "sco"
+    redis_db_index = 6
+    db_suffix = "scoring"
+    url_env_name = "SCORING_URL"
+    path_patterns = ["/scorings*"]
+  }
+  "reporting-service" = {
+    port = 8008
+    health_path = "/health"
+    tg_suffix = "rep"
+    redis_db_index = 7
+    db_suffix = "reporting"
+    url_env_name = "REPORTING_URL"
+    path_patterns = ["/reportings*"]
+  }
+}
+
+# KEDA scaling (enabled by default; CPU/memory scale immediately; ALB scaling needs suffixes below)
+# Set alb_target_group_arn_suffixes after first apply (fetch from ALB target groups created by Ingress)
 # alb_target_group_arn_suffixes = {
 #   "identity-service"             = "targetgroup/xxxx/xxxxxxxxxxxx"
 #   "enrollment-service"           = "targetgroup/xxxx/xxxxxxxxxxxx"
@@ -27,3 +124,8 @@ email_from = "no-reply@your-domain.com"
 #   "scoring-service"              = "targetgroup/xxxx/xxxxxxxxxxxx"
 #   "reporting-service"            = "targetgroup/xxxx/xxxxxxxxxxxx"
 # }
+
+# Optional compute node group (for workload isolation; disabled by default)
+# enable_compute_node_group = true
+# compute_node_instance_types = ["c5.large"]
+# compute_node_desired_size = 1
