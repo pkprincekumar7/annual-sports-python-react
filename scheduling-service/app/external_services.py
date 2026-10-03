@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import httpx
+from bson import ObjectId
 
 from .cache import cache
 from .config import get_settings
@@ -209,6 +210,18 @@ async def get_identity_me(token: str) -> Optional[Dict[str, Any]]:
     return data.get("player")
 
 
+def _serialize_doc_for_json(data: Dict[str, Any]) -> Dict[str, Any]:
+    serialized: Dict[str, Any] = {}
+    for key, value in data.items():
+        if isinstance(value, ObjectId):
+            serialized[key] = str(value)
+        elif isinstance(value, datetime):
+            serialized[key] = value.isoformat()
+        else:
+            serialized[key] = value
+    return serialized
+
+
 async def update_points_table(
     match: Dict[str, Any],
     previous_status: str,
@@ -219,7 +232,7 @@ async def update_points_table(
     if not settings.scoring_url:
         raise RuntimeError("SCORING_URL is not configured")
     payload = {
-        "match": match,
+        "match": _serialize_doc_for_json(match),
         "previous_status": previous_status,
         "previous_winner": previous_winner,
         "user_reg_number": user_reg_number,

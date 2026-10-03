@@ -26,6 +26,19 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+.Python
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

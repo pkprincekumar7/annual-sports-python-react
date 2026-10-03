@@ -49,7 +49,7 @@ async def add_captain(
     token = get_request_token(request)
 
     event_year_data = await get_event_year(
-        str(event_id).trim(), require_id=True, return_doc=True, token=token
+        str(event_id).strip(), require_id=True, return_doc=True, token=token
     )
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
@@ -124,7 +124,7 @@ async def remove_captain(
     token = get_request_token(request)
 
     event_year_data = await get_event_year(
-        str(event_id).trim(), require_id=True, return_doc=True, token=token
+        str(event_id).strip(), require_id=True, return_doc=True, token=token
     )
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 

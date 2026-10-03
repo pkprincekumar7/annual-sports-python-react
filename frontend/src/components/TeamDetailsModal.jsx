@@ -143,9 +143,10 @@ function TeamDetailsModal({ isOpen, onClose, sport, sportDetails = null, loggedI
         if (data.success) {
           // Server-side filtering: admin user already filtered out on server
           const playersList = data.players || []
-          const filteredPlayers = sport
-            ? playersList.filter(player => !isCoordinatorForSport(player, sport))
-            : playersList
+          const coordinatorRegNumbers = new Set(sportDetails?.eligible_coordinators || [])
+          const filteredPlayers = playersList.filter(
+            player => !coordinatorRegNumbers.has(player.reg_number)
+          )
           setPlayers(filteredPlayers)
       } else {
         logger.warn('Failed to fetch players:', data.error)

@@ -12,7 +12,6 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from app.auth import _ResponseException
 from app.config import get_settings
-from app.date_restrictions import check_registration_deadline
 from app.errors import send_error_response
 from app.routers import points_table as points_table_router
 
@@ -105,15 +104,6 @@ async def request_logging_middleware(request: Request, call_next):
         client_host=request.client.host if request.client else None,
     )
     return response
-
-
-@app.middleware("http")
-async def registration_deadline_middleware(request: Request, call_next):
-    if request.url.path.startswith("/scorings"):
-        response = await check_registration_deadline(request)
-        if response is not None:
-            return response
-    return await call_next(request)
 
 
 @app.middleware("http")
