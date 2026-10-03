@@ -7,7 +7,7 @@ from fastapi import Request
 
 from .auth import get_request_token
 from .errors import send_error_response
-from .external_services import get_event_year, get_active_event_year
+from .external_services import get_event_year
 
 
 def _format_date(date_value: datetime) -> str:
@@ -247,36 +247,4 @@ async def require_event_status_update_period(request: Request) -> Optional[Any]:
     if not check["isWithin"]:
         return send_error_response(400, check["message"])
     request.state.event_year_doc = check["eventYearDoc"]
-    return None
-
-
-async def check_registration_deadline(request: Request) -> Optional[Any]:
-    if request.method == "GET":
-        return None
-    path = request.url.path
-    if path in {
-        "/identities/login",
-        "/identities/change-password",
-        "/identities/reset-password",
-    }:
-        return None
-    try:
-        active_year = await get_active_event_year()
-        if not active_year or not active_year.get("registration_dates", {}).get("end"):
-            return send_error_response(
-                500,
-                "Registration deadline is not configured. Please contact administrator to set up event year with registration dates.",
-            )
-        deadline = _parse_date(active_year["registration_dates"]["end"])
-        if not deadline:
-            return send_error_response(
-                500,
-                "Registration deadline is not configured. Please contact administrator to set up event year with registration dates.",
-            )
-        now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        deadline = deadline.replace(hour=0, minute=0, second=0, microsecond=0)
-        if now > deadline:
-            return send_error_response(400, f"Registration for events closed on {_format_date(deadline)}.")
-    except Exception:
-        return send_error_response(500, "Error checking registration deadline. Please try again.")
     return None

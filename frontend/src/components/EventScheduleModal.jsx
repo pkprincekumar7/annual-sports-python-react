@@ -236,11 +236,12 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
           setTeamsListWithGender([])
         }
         
-        // Store all players for gender filtering
+        // Store all players for gender filtering (exclude sport coordinators)
         if (data.players) {
-          const filteredPlayers = sport
-            ? (data.players || []).filter(player => !isCoordinatorForSport(player, sport))
-            : (data.players || [])
+          const coordinatorRegNumbers = new Set(sportDetails?.eligible_coordinators || [])
+          const filteredPlayers = (data.players || []).filter(
+            player => !coordinatorRegNumbers.has(player.reg_number)
+          )
           setAllPlayersList(filteredPlayers)
           // Initially show all players, will filter based on selection
           setPlayersList(filteredPlayers)

@@ -203,7 +203,9 @@ async def validate_final_match_requirement(
         trimmed_active = [p.strip() for p in active_participants if p and p.strip()]
         trimmed_in_match = [p.strip() for p in participants_in_match if p and p.strip()]
         if all(p in trimmed_active for p in trimmed_in_match):
-            if match_type != "final":
+            # Allow parallel knockouts (e.g. semi-finals) while other KO/final matches are
+            # still scheduled. Require "final" only when these are the last 2 eligible players.
+            if match_type != "final" and not in_scheduled:
                 return {
                     "statusCode": 400,
                     "message": (

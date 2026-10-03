@@ -206,7 +206,7 @@ async def update_participation(
     if not event_id or not str(event_id).strip():
         return send_error_response(400, "event_id is required")
 
-    event_year_data = await get_event_year(str(event_id).trim(), return_doc=True, token=token)
+    event_year_data = await get_event_year(str(event_id).strip(), return_doc=True, token=token)
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
     if not reg_number or not sport:
@@ -281,7 +281,7 @@ async def remove_participation(
     if not event_id or not str(event_id).strip():
         return send_error_response(400, "event_id is required")
 
-    event_year_data = await get_event_year(str(event_id).trim(), return_doc=True, token=token)
+    event_year_data = await get_event_year(str(event_id).strip(), return_doc=True, token=token)
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
     try:

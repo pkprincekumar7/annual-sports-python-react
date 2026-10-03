@@ -60,7 +60,7 @@ async def update_team_participation(
     if not event_id or not str(event_id).strip():
         return send_error_response(400, "event_id is required")
 
-    event_year_data = await get_event_year(str(event_id).trim(), return_doc=True, token=token)
+    event_year_data = await get_event_year(str(event_id).strip(), return_doc=True, token=token)
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
     if not team_name or not sport or not isinstance(reg_numbers, list) or len(reg_numbers) == 0:
@@ -370,7 +370,7 @@ async def update_team_player(
     if not event_id or not str(event_id).strip():
         return send_error_response(400, "event_id is required")
 
-    event_year_data = await get_event_year(str(event_id).trim(), return_doc=True, token=token)
+    event_year_data = await get_event_year(str(event_id).strip(), return_doc=True, token=token)
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
     try:
@@ -536,7 +536,7 @@ async def delete_team(
     if not event_id or not str(event_id).strip():
         return send_error_response(400, "event_id is required")
 
-    event_year_data = await get_event_year(str(event_id).trim(), return_doc=True, token=token)
+    event_year_data = await get_event_year(str(event_id).strip(), return_doc=True, token=token)
     resolved_event_id = event_year_data.get("doc", {}).get("event_id")
 
     try:
