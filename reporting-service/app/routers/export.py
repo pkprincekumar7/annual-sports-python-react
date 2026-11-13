@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any, Dict, List
 
@@ -9,6 +8,7 @@ from openpyxl import Workbook
 from ..auth import admin_dependency, auth_dependency
 from ..batch_helpers import get_players_batch_names
 from ..external_services import fetch_players, fetch_sports, get_event_year
+from ..ist_dates import now_ist
 from ..player_helpers import compute_players_participation_batch
 
 
@@ -134,7 +134,7 @@ async def export_excel(
     buffer.seek(0)
 
     event_year_label = event_year_doc.get("event_year") if event_year_doc else "no-event"
-    filename = f"Players_Report_{event_year_label}_{datetime.now(timezone.utc).date()}.xlsx"
+    filename = f"Players_Report_{event_year_label}_{now_ist().strftime('%Y-%m-%d')}.xlsx"
     return Response(
         content=buffer.getvalue(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

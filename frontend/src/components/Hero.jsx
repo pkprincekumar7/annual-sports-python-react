@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useEventYear } from '../hooks/useEventYear'
 import { formatDateRange } from '../utils/dateFormatters'
 import { isWithinRegistrationPeriod } from '../utils/yearHelpers'
+import { parseApiDate } from '../utils/istDates'
 import EventYearSelector from './EventYearSelector'
 
 function Hero({ eventDisplayName, onRegisterClick, onLoginClick, onLogout, onCaptainManagementClick, onCoordinatorManagementClick, onBatchManagementClick, onListPlayersClick, onExportExcel, onAdminDashboardClick, onEventYearChange, selectedEventId, loggedInUser, onChangePasswordClick, onResetPasswordClick }) {
@@ -32,10 +33,10 @@ function Hero({ eventDisplayName, onRegisterClick, onLoginClick, onLogout, onCap
 
     // Calculate all timestamps once - all dates are required, so no null checks needed
     // API returns ISO date strings with time already included (e.g., "2026-01-02T18:29:59.000Z")
-    const registrationStartTime = new Date(eventYearConfig.registration_dates.start).getTime()
-    const registrationEndTime = new Date(eventYearConfig.registration_dates.end).getTime()
-    const eventStartTime = new Date(eventYearConfig.event_dates.start).getTime()
-    const eventEndTime = new Date(eventYearConfig.event_dates.end).getTime()
+    const registrationStartTime = parseApiDate(eventYearConfig.registration_dates.start).getTime()
+    const registrationEndTime = parseApiDate(eventYearConfig.registration_dates.end).getTime()
+    const eventStartTime = parseApiDate(eventYearConfig.event_dates.start).getTime()
+    const eventEndTime = parseApiDate(eventYearConfig.event_dates.end).getTime()
 
     const update = () => {
       const currentTime = Date.now()

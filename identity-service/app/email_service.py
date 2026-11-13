@@ -1,11 +1,11 @@
 import logging
-from datetime import datetime, timezone
 from email.message import EmailMessage
 from typing import Dict
 
 import aiosmtplib
 
 from .config import get_settings
+from .ist_dates import current_ist_year
 
 
 logger = logging.getLogger("identity-service.email")
@@ -66,7 +66,7 @@ async def send_password_reset_email(
     from_name = settings.email_from_name
     app_name = settings.app_name
 
-    current_year = str(datetime.now(timezone.utc).year)
+    current_year = str(current_ist_year())
     safe_name = recipient_name or "User"
     html_body = f"""
 <!DOCTYPE html>

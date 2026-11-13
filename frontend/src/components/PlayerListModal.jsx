@@ -7,6 +7,7 @@ import { GENDER_OPTIONS, DEFAULT_PLAYERS_PAGE_SIZE } from '../constants/app'
 import logger from '../utils/logger'
 import { trimFormData, validateEmail, validatePhone, validateRequired } from '../utils/formValidation'
 import { shouldDisableDatabaseOperations } from '../utils/yearHelpers'
+import { formatDateIst } from '../utils/istDates'
 
 function PlayerListModal({ isOpen, onClose, onStatusPopup, selectedEventId }) {
   const [players, setPlayers] = useState([])
@@ -1294,7 +1295,7 @@ function PlayerListModal({ isOpen, onClose, onStatusPopup, selectedEventId }) {
                       <span className="text-[#ffe66d] ml-2">[{match.status}]</span>
                       {match.match_date && (
                         <span className="text-[#cbd5ff] ml-2">
-                          - {new Date(match.match_date).toLocaleDateString()}
+                          - {formatDateIst(match.match_date)}
                         </span>
                       )}
                     </li>
@@ -1465,7 +1466,7 @@ function PlayerListModal({ isOpen, onClose, onStatusPopup, selectedEventId }) {
                                 <span className="text-[#ffe66d] ml-1">[{match.status}]</span>
                                 {match.match_date && (
                                   <span className="text-[#cbd5ff] ml-1">
-                                    - {new Date(match.match_date).toLocaleDateString()}
+                                    - {formatDateIst(match.match_date)}
                                   </span>
                                 )}
                               </div>
@@ -1537,7 +1538,7 @@ function PlayerListModal({ isOpen, onClose, onStatusPopup, selectedEventId }) {
                                     <span className="text-[#ffe66d] ml-1">[{match.status}]</span>
                                     {match.match_date && (
                                       <span className="text-[#cbd5ff] ml-1">
-                                        - {new Date(match.match_date).toLocaleDateString()}
+                                        - {formatDateIst(match.match_date)}
                                       </span>
                                     )}
                                   </div>

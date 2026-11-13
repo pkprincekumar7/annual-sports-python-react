@@ -336,6 +336,30 @@ function SportsSection({ onSportClick, onEventScheduleClick, loggedInUser, selec
     )
   }
 
+  // Card behaviour follows the sport's type (team vs individual), not the section it is
+  // listed under, e.g. a team-type game in "Literary & Cultural Activities".
+  const renderSportCard = (sport) => {
+    const sportKey = sport.name?.toLowerCase()
+    const isTeamType = sport.type === 'dual_team' || sport.type === 'multi_team'
+    const cardType = isTeamType ? 'team' : 'individual'
+    return (
+      <SportCard
+        key={sport.name}
+        sport={sport}
+        type={cardType}
+        onSportClick={onSportClick}
+        onEventScheduleClick={onEventScheduleClick}
+        loggedInUser={loggedInUser}
+        isEnrolled={isEnrolledInSport(sport.name, cardType)}
+        isCaptain={isTeamType ? isCaptainForSport(sport.name) : false}
+        isCoordinator={isCoordinatorForSportCard(sport)}
+        canCreateOrViewTeam={isTeamType ? canCreateOrViewTeam(sport.name) : undefined}
+        teamsCount={isTeamType ? sportsCounts.teams_counts[sportKey] : undefined}
+        participantsCount={isTeamType ? undefined : sportsCounts.participants_counts[sportKey]}
+      />
+    )
+  }
+
   return (
     <section id="sports" className="mt-[2.2rem]">
       {teamSports.length > 0 && (
@@ -344,22 +368,7 @@ function SportsSection({ onSportClick, onEventScheduleClick, loggedInUser, selec
             Team Events
           </h3>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-[1.2rem]">
-            {teamSports.map((sport) => (
-              <SportCard 
-                key={sport.name} 
-                sport={sport} 
-                type="team" 
-                onSportClick={onSportClick}
-                onEventScheduleClick={onEventScheduleClick}
-                loggedInUser={loggedInUser}
-                isEnrolled={isEnrolledInSport(sport.name, 'team')}
-                isCaptain={isCaptainForSport(sport.name)}
-                isCoordinator={isCoordinatorForSportCard(sport)}
-                canCreateOrViewTeam={canCreateOrViewTeam(sport.name)}
-                teamsCount={sportsCounts.teams_counts[sport.name?.toLowerCase()]}
-                participantsCount={undefined}
-              />
-            ))}
+            {teamSports.map(renderSportCard)}
           </div>
         </>
       )}
@@ -370,21 +379,7 @@ function SportsSection({ onSportClick, onEventScheduleClick, loggedInUser, selec
             Individual Events
           </h3>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-[1.2rem]">
-            {individualSports.map((sport) => (
-              <SportCard 
-                key={sport.name} 
-                sport={sport} 
-                type="individual" 
-                onSportClick={onSportClick}
-                onEventScheduleClick={onEventScheduleClick}
-                loggedInUser={loggedInUser}
-                isEnrolled={isEnrolledInSport(sport.name, 'individual')}
-                isCaptain={false}
-                isCoordinator={isCoordinatorForSportCard(sport)}
-                teamsCount={undefined}
-                participantsCount={sportsCounts.participants_counts[sport.name?.toLowerCase()]}
-              />
-            ))}
+            {individualSports.map(renderSportCard)}
           </div>
         </>
       )}
@@ -395,21 +390,7 @@ function SportsSection({ onSportClick, onEventScheduleClick, loggedInUser, selec
             Literary & Cultural Activities
           </h3>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-[1.2rem]">
-            {culturalSports.map((sport) => (
-              <SportCard 
-                key={sport.name} 
-                sport={sport} 
-                type="individual" 
-                onSportClick={onSportClick}
-                onEventScheduleClick={onEventScheduleClick}
-                loggedInUser={loggedInUser}
-                isEnrolled={isEnrolledInSport(sport.name, 'individual')}
-                isCaptain={false}
-                isCoordinator={isCoordinatorForSportCard(sport)}
-                teamsCount={undefined}
-                participantsCount={sportsCounts.participants_counts[sport.name?.toLowerCase()]}
-              />
-            ))}
+            {culturalSports.map(renderSportCard)}
           </div>
         </>
       )}

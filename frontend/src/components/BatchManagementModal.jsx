@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Modal, Button, Input, EmptyState, ConfirmationDialog } from './ui'
-import { useApi, useModal, useEventYearWithFallback, useEventYear } from '../hooks'
+import { useApi, useModal, useEventYearWithFallback, useEventYear, useEventYears } from '../hooks'
 import { fetchWithAuth, clearCache, clearCachePattern } from '../utils/api'
 import { buildApiUrlWithYear } from '../utils/apiHelpers'
 import logger from '../utils/logger'
-import { shouldDisableDatabaseOperations } from '../utils/yearHelpers'
+import { shouldDisableEventSetup } from '../utils/yearHelpers'
 
 const TABS = {
   ADD_BATCH: 'add_batch',
@@ -30,7 +30,10 @@ function BatchManagementModal({ isOpen, onClose, onStatusPopup, selectedEventId 
   const confirmModal = useModal(false)
   
   // Check if database operations should be disabled
-  const operationStatus = shouldDisableDatabaseOperations(eventYearConfig)
+  const { eventYears } = useEventYears()
+  // Batches can be managed any time until registration ends (also before it starts)
+  const selectedEventData = eventId ? eventYears.find(ey => ey.event_id === eventId) || null : null
+  const operationStatus = shouldDisableEventSetup(selectedEventData || eventYearConfig, 'Batches')
   const isOperationDisabled = operationStatus.disabled
 
   // Fetch batches for Remove Batch tab

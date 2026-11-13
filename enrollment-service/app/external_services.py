@@ -6,6 +6,7 @@ import httpx
 
 from .cache import cache
 from .config import get_settings
+from .ist_dates import ist_end_of_day, ist_midnight_on, now_ist_midnight
 
 
 logger = logging.getLogger("enrollment-service.external")
@@ -30,27 +31,14 @@ async def _get_json(
         return response.json()
 
 
-def _parse_date(value: Any) -> Optional[datetime]:
-    if not value:
-        return None
-    if isinstance(value, datetime):
-        return value
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except Exception:
-        return None
-
-
 def should_event_year_be_active(event_year_doc: Dict[str, Any]) -> bool:
     if not event_year_doc:
         return False
-    reg_start = _parse_date(event_year_doc.get("registration_dates", {}).get("start"))
-    event_end = _parse_date(event_year_doc.get("event_dates", {}).get("end"))
+    reg_start = ist_midnight_on(event_year_doc.get("registration_dates", {}).get("start"))
+    event_end = ist_end_of_day(event_year_doc.get("event_dates", {}).get("end"))
     if not reg_start or not event_end:
         return False
-    now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    reg_start = reg_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    event_end = event_end.replace(hour=23, minute=59, second=59, microsecond=999000)
+    now = now_ist_midnight()
     return reg_start <= now <= event_end
 
 

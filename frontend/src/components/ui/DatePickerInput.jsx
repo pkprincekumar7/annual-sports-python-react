@@ -6,6 +6,7 @@
 
 import { useRef, useEffect } from 'react'
 import Input from './Input'
+import { toIstDateString } from '../../utils/istDates'
 
 function DatePickerInput({
   label,
@@ -98,10 +99,7 @@ function DatePickerInput({
       return match ? match[1] : val
     }
     if (val instanceof Date) {
-      const year = val.getFullYear()
-      const month = String(val.getMonth() + 1).padStart(2, '0')
-      const day = String(val.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
+      return toIstDateString(val)
     }
     return val
   }
@@ -116,7 +114,9 @@ function DatePickerInput({
   }, [])
 
   // Normalize value to date format (YYYY-MM-DD)
-  const normalizedValue = value ? (value.includes('T') ? value.split('T')[0] : value) : value
+  const normalizedValue = value
+    ? (String(value).includes('T') ? toIstDateString(value) : value)
+    : value
   const normalizedMin = min ? normalizeDateValue(min) : min
   const normalizedMax = max ? normalizeDateValue(max) : max
 

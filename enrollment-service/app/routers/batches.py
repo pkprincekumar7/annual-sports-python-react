@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..auth import admin_dependency, auth_dependency
 from ..cache import cache
-from ..date_restrictions import require_registration_period
+from ..date_restrictions import require_batch_management_period, require_registration_period
 from ..db import batches_collection
 from ..errors import handle_not_found_error, send_error_response, send_success_response
 from ..external_services import get_event_year
@@ -60,7 +60,7 @@ async def add_batch(
     request: Request,
     _: None = Depends(auth_dependency),
     __: None = Depends(admin_dependency),
-    ___: None = Depends(require_registration_period),
+    ___: None = Depends(require_batch_management_period),
 ):
     body = trim_object_fields(await request.json())
     created_by = body.pop("createdBy", None)
@@ -126,7 +126,7 @@ async def remove_batch(
     request: Request,
     _: None = Depends(auth_dependency),
     __: None = Depends(admin_dependency),
-    ___: None = Depends(require_registration_period),
+    ___: None = Depends(require_batch_management_period),
 ):
     body = trim_object_fields(await request.json())
     is_valid, errors = validate_batch_assignment(body)

@@ -12,7 +12,6 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from app.auth import _ResponseException
 from app.config import get_settings
-from app.date_restrictions import check_registration_deadline
 from app.errors import send_error_response
 from app.routers import departments as departments_router
 
@@ -119,13 +118,8 @@ async def request_logging_middleware(request: Request, call_next):
     return response
 
 
-@app.middleware("http")
-async def registration_deadline_middleware(request: Request, call_next):
-    if request.url.path.startswith("/departments"):
-        response = await check_registration_deadline(request)
-        if response is not None:
-            return response
-    return await call_next(request)
+# Departments are permanent school data, so they are not restricted by any
+# event-year registration dates (no registration-deadline middleware here).
 
 
 @app.middleware("http")

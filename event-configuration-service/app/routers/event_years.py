@@ -11,6 +11,15 @@ from ..db import event_years_collection
 from ..errors import handle_not_found_error, send_error_response, send_success_response
 from ..external_services import count_points_entries, count_schedules, count_sports
 from ..validators import normalize_event_name, trim_object_fields
+from ..ist_dates import (
+    format_date_ist,
+    ist_day_before,
+    ist_end_of_day,
+    ist_midnight_on,
+    now_ist_midnight,
+    to_utc_iso,
+    utc_naive_for_storage,
+)
 from ..year_helpers import (
     build_event_id,
     find_active_event_year,
@@ -35,39 +44,14 @@ def _ordinal(day: int) -> str:
     return f"{day}th"
 
 
-def _format_date(date_value: datetime) -> str:
-    day = date_value.day
-    month = date_value.strftime("%b")
-    year = date_value.year
-    return f"{_ordinal(day)} {month} {year}"
-
-
-def _parse_date(value: Any) -> Optional[datetime]:
-    if not value:
-        return None
-    if isinstance(value, datetime):
-        parsed = value
-        if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
-    try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
-    except Exception:
-        return None
+def _format_date(date_value: Any) -> str:
+    return format_date_ist(date_value)
 
 
 def _serialize_datetime(value: Any) -> Optional[str]:
     if not value:
         return None
-    if isinstance(value, str):
-        return value
-    if isinstance(value, datetime):
-        iso = value.isoformat()
-        return iso.replace("+00:00", "Z")
-    return str(value)
+    return to_utc_iso(value)
 
 
 def _serialize_event_year(event_year: Dict[str, Any]) -> Dict[str, Any]:
@@ -104,8 +88,8 @@ def _prepare_dates(data: Dict[str, Any]) -> Dict[str, Any]:
     if not data:
         return {}
     return {
-        "start": _parse_date(data.get("start")),
-        "end": _parse_date(data.get("end")),
+        "start": utc_naive_for_storage(data.get("start"), end_of_day=False),
+        "end": utc_naive_for_storage(data.get("end"), end_of_day=True),
     }
 
 
@@ -178,22 +162,20 @@ async def create_event_year(
     if not date_validation["isValid"]:
         return send_error_response(400, date_validation["error"])
 
-    now = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    reg_start = _parse_date(registration_dates.get("start"))
+    today = now_ist_midnight()
+    reg_start = registration_dates.get("start")
     if not reg_start:
         return send_error_response(400, "Registration dates are invalid")
-    reg_start = reg_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    if reg_start < now:
+    if ist_day_before(reg_start, today):
         return send_error_response(
             400,
             "Registration start date cannot be in the past. Event creation is only allowed for current or future dates.",
         )
 
-    event_start = _parse_date(event_dates.get("start"))
+    event_start = event_dates.get("start")
     if not event_start:
         return send_error_response(400, "Event dates are invalid")
-    event_start = event_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    if event_start < now:
+    if ist_day_before(event_start, today):
         return send_error_response(
             400,
             "Event start date cannot be in the past. Event creation is only allowed for current or future dates.",
@@ -288,22 +270,22 @@ async def update_event_year(
     if not event_year_doc:
         return handle_not_found_error("Event year")
 
-    now = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    reg_end = _parse_date((event_year_doc.get("registration_dates") or {}).get("end"))
+    now = now_ist_midnight()
+    reg_end = (event_year_doc.get("registration_dates") or {}).get("end")
     if reg_end:
-        reg_end = reg_end.replace(hour=23, minute=59, second=59, microsecond=999000)
-        if now > reg_end:
+        reg_end_bound = ist_end_of_day(reg_end)
+        if reg_end_bound and now > reg_end_bound:
             return send_error_response(
                 400,
                 "Cannot update event year. Updates are only allowed until registration end date "
                 f"({_format_date(reg_end)}).",
             )
 
-    event_end = _parse_date((event_year_doc.get("event_dates") or {}).get("end"))
+    event_end = (event_year_doc.get("event_dates") or {}).get("end")
     event_has_ended = False
     if event_end:
-        event_end = event_end.replace(hour=23, minute=59, second=59, microsecond=999000)
-        event_has_ended = now > event_end
+        event_end_bound = ist_end_of_day(event_end)
+        event_has_ended = bool(event_end_bound and now > event_end_bound)
 
     event_name = body.get("event_name")
     event_organizer_provided = "event_organizer" in body
@@ -436,11 +418,11 @@ async def delete_event_year(
     if not year_doc:
         return handle_not_found_error("Event year")
 
-    now = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    reg_start = _parse_date((year_doc.get("registration_dates") or {}).get("start"))
+    now = now_ist_midnight()
+    reg_start = (year_doc.get("registration_dates") or {}).get("start")
     if reg_start:
-        reg_start = reg_start.replace(hour=0, minute=0, second=0, microsecond=0)
-        if now >= reg_start:
+        reg_start_bound = ist_midnight_on(reg_start)
+        if reg_start_bound and now >= reg_start_bound:
             return send_error_response(
                 400,
                 "Cannot delete event year. Deletion is only allowed before registration start date "

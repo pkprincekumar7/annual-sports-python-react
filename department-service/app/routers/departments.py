@@ -11,6 +11,7 @@ from ..cache import cache
 from ..db import departments_collection
 from ..errors import handle_not_found_error, send_error_response, send_success_response
 from ..external_services import fetch_players
+from ..ist_dates import to_utc_iso
 from ..validators import normalize_department_code, normalize_department_name, trim_object_fields
 
 
@@ -28,11 +29,7 @@ def _parse_object_id(value: str) -> Optional[ObjectId]:
 def _serialize_datetime(value: Any) -> Optional[str]:
     if not value:
         return None
-    if isinstance(value, str):
-        return value
-    if isinstance(value, datetime):
-        return value.isoformat()
-    return str(value)
+    return to_utc_iso(value)
 
 
 def _serialize_department(department: Dict[str, Any]) -> Dict[str, Any]:

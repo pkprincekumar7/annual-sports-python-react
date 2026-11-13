@@ -12,6 +12,13 @@ import {
   validateDifferentParticipants 
 } from '../utils/participantValidation'
 import { getEventPeriodStatus, getEventStatusUpdatePeriodStatus } from '../utils/yearHelpers'
+import {
+  compareIstDays,
+  formatDateIst,
+  nowIstMidnight,
+  startOfIstDay,
+  todayIstDateString,
+} from '../utils/istDates'
 import { isCoordinatorForSportScope } from '../utils/sportHelpers'
 
 function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: sportDetailsProp = null, loggedInUser, onStatusPopup, embedded = false, selectedEventId }) {
@@ -69,12 +76,7 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
   // Helper function to check if match date is in the future
   const isMatchInFuture = (matchDate) => {
     if (!matchDate) return false
-    const matchDateObj = new Date(matchDate)
-    const now = new Date()
-    // Compare dates (ignore time for date comparison)
-    matchDateObj.setHours(0, 0, 0, 0)
-    now.setHours(0, 0, 0, 0)
-    return matchDateObj > now
+    return compareIstDays(matchDate, nowIstMidnight()) > 0
   }
 
   useEffect(() => {
@@ -881,22 +883,13 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
       
       if (leagueMatchesForGender.length > 0) {
         // Validate that match_date is not before all league matches (same date is allowed)
-        const latestLeagueMatch = leagueMatchesForGender.reduce((latest, match) => {
-          const matchDate = new Date(match.match_date)
-          matchDate.setHours(0, 0, 0, 0)
-          const latestDate = new Date(latest.match_date)
-          latestDate.setHours(0, 0, 0, 0)
-          return matchDate > latestDate ? match : latest
-        })
-        
-        const latestLeagueDate = new Date(latestLeagueMatch.match_date)
-        latestLeagueDate.setHours(0, 0, 0, 0)
-        const matchDateObj = new Date(matchDate + 'T00:00:00')
-        matchDateObj.setHours(0, 0, 0, 0)
-        
-        if (matchDateObj < latestLeagueDate) {
+        const latestLeagueMatch = leagueMatchesForGender.reduce((latest, match) =>
+          compareIstDays(match.match_date, latest.match_date) > 0 ? match : latest
+        )
+
+        if (compareIstDays(matchDate, latestLeagueMatch.match_date) < 0) {
           if (onStatusPopup) {
-            onStatusPopup(`❌ ${matchType === 'knockout' ? 'Knockout' : 'Final'} match date cannot be before all league matches. Latest league match date: ${latestLeagueDate.toLocaleDateString()}`, 'error', 4000)
+            onStatusPopup(`❌ ${matchType === 'knockout' ? 'Knockout' : 'Final'} match date cannot be before all league matches. Latest league match date: ${formatDateIst(latestLeagueMatch.match_date)}`, 'error', 4000)
           }
           return
         }
@@ -958,22 +951,13 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
         
         if (knockoutMatchesForGender.length > 0) {
           // Validate that match_date is not before all knockout matches (same date is allowed)
-          const latestKnockoutMatch = knockoutMatchesForGender.reduce((latest, match) => {
-            const matchDate = new Date(match.match_date)
-            matchDate.setHours(0, 0, 0, 0)
-            const latestDate = new Date(latest.match_date)
-            latestDate.setHours(0, 0, 0, 0)
-            return matchDate > latestDate ? match : latest
-          })
-          
-          const latestKnockoutDate = new Date(latestKnockoutMatch.match_date)
-          latestKnockoutDate.setHours(0, 0, 0, 0)
-          const matchDateObj = new Date(matchDate + 'T00:00:00')
-          matchDateObj.setHours(0, 0, 0, 0)
-          
-          if (matchDateObj < latestKnockoutDate) {
+          const latestKnockoutMatch = knockoutMatchesForGender.reduce((latest, match) =>
+            compareIstDays(match.match_date, latest.match_date) > 0 ? match : latest
+          )
+
+          if (compareIstDays(matchDate, latestKnockoutMatch.match_date) < 0) {
             if (onStatusPopup) {
-              onStatusPopup(`❌ Final match date cannot be before all knockout matches. Latest knockout match date: ${latestKnockoutDate.toLocaleDateString()}`, 'error', 4000)
+              onStatusPopup(`❌ Final match date cannot be before all knockout matches. Latest knockout match date: ${formatDateIst(latestKnockoutMatch.match_date)}`, 'error', 4000)
             }
             return
           }
@@ -988,13 +972,7 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
       return
     }
 
-    // Validate match date - must be today or after today (date-only comparison)
-    const matchDateObj = new Date(matchDate + 'T00:00:00')
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to start of day for comparison
-    matchDateObj.setHours(0, 0, 0, 0)
-    
-    if (matchDateObj < today) {
+    if (compareIstDays(matchDate, todayIstDateString()) < 0) {
       if (onStatusPopup) {
         onStatusPopup('❌ Match date must be today or a future date.', 'error', 2500)
       }
@@ -1220,7 +1198,7 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
             sports_name: sport,
             teams: teams,
             players: players,
-            match_date: matchDate + 'T00:00:00', // Add time for MongoDB storage
+            match_date: startOfIstDay(matchDate),
             event_id: eventId,
             // Gender is not sent - it will be derived from participants on the backend
             number_of_participants: isMultiSport ? parseInt(numberOfParticipants) : undefined,
@@ -1286,12 +1264,7 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return formatDateIst(dateString)
   }
 
 
@@ -1698,7 +1671,7 @@ function EventScheduleModal({ isOpen, onClose, sport, sportType, sportDetails: s
                 label="Match Date"
                 value={matchDate}
                 onChange={(e) => setMatchDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={todayIstDateString()}
                 required
                 className="mb-4"
               />

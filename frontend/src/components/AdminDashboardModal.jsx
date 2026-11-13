@@ -17,7 +17,8 @@ import ErrorMessage from './ui/ErrorMessage'
 import { formatSportName } from '../utils/stringHelpers'
 import ConfirmationDialog from './ui/ConfirmationDialog'
 import EventYearSelector from './EventYearSelector'
-import { validateDateRelationships, getUpdatableDateFields, shouldDisableDatabaseOperations, canDeleteEventYear } from '../utils/yearHelpers'
+import { validateDateRelationships, getUpdatableDateFields, shouldDisableEventSetup, canDeleteEventYear } from '../utils/yearHelpers'
+import { startOfIstDay, endOfIstDay, toIstDateString, compareIstDays } from '../utils/istDates'
 
 const TABS = {
   EVENT_YEARS: 'event_years',
@@ -30,16 +31,16 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
   const { eventYear: activeEventYear, eventYearConfig } = useEventYear()
   // Use selectedEventId if admin selected one, otherwise use active event year
   
-  // Check if database operations should be disabled (for Sports and other tabs, not Event Years)
-  const operationStatus = shouldDisableDatabaseOperations(eventYearConfig)
-  const isOperationDisabled = operationStatus.disabled
-
   // Event Years State
   const [eventYears, setEventYears] = useState([])
   const currentEventId = selectedEventId || eventYearConfig?.event_id || null
   const selectedEventData = currentEventId
     ? eventYears.find(ey => ey.event_id === currentEventId) || null
     : null
+
+  // Sports can be managed any time until registration ends (also before it starts)
+  const operationStatus = shouldDisableEventSetup(selectedEventData || eventYearConfig, 'Sports')
+  const isOperationDisabled = operationStatus.disabled
   const currentEventYear = selectedEventData?.event_year || activeEventYear
   const [eventYearForm, setEventYearForm] = useState({
     event_year: '',
@@ -193,19 +194,14 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
       return
     }
     
-    // Client-side validation: Check past dates
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const regStart = new Date(eventYearForm.registration_dates.start + 'T00:00:00')
-    regStart.setHours(0, 0, 0, 0)
-    if (regStart < now) {
+    // Client-side validation: Check past dates (IST calendar)
+    const todayIst = toIstDateString(new Date())
+    if (compareIstDays(eventYearForm.registration_dates.start, todayIst) < 0) {
       onStatusPopup('❌ Registration start date cannot be in the past. Event creation is only allowed for current or future dates.', 'error', 3000)
       return
     }
     
-    const eventStart = new Date(eventYearForm.event_dates.start + 'T00:00:00')
-    eventStart.setHours(0, 0, 0, 0)
-    if (eventStart < now) {
+    if (compareIstDays(eventYearForm.event_dates.start, todayIst) < 0) {
       onStatusPopup('❌ Event start date cannot be in the past. Event creation is only allowed for current or future dates.', 'error', 3000)
       return
     }
@@ -234,12 +230,12 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
           event_title: eventYearForm.event_title || undefined,
           event_highlight: eventYearForm.event_highlight || undefined,
           event_dates: {
-            start: new Date(eventYearForm.event_dates.start + 'T00:00:00'),
-            end: new Date(eventYearForm.event_dates.end + 'T23:59:59')
+            start: startOfIstDay(eventYearForm.event_dates.start),
+            end: endOfIstDay(eventYearForm.event_dates.end)
           },
           registration_dates: {
-            start: new Date(eventYearForm.registration_dates.start + 'T00:00:00'),
-            end: new Date(eventYearForm.registration_dates.end + 'T23:59:59')
+            start: startOfIstDay(eventYearForm.registration_dates.start),
+            end: endOfIstDay(eventYearForm.registration_dates.end)
           }
         })
       })
@@ -322,11 +318,11 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
     
     if (updatableFields.canUpdateRegStart || updatableFields.canUpdateRegEnd) {
       if (updatableFields.canUpdateRegStart) {
-        regDates.start = new Date(eventYearForm.registration_dates.start + 'T00:00:00')
+        regDates.start = startOfIstDay(eventYearForm.registration_dates.start)
         hasRegDates = true
       }
       if (updatableFields.canUpdateRegEnd) {
-        regDates.end = new Date(eventYearForm.registration_dates.end + 'T23:59:59')
+        regDates.end = endOfIstDay(eventYearForm.registration_dates.end)
         hasRegDates = true
       }
       if (hasRegDates) {
@@ -336,11 +332,11 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
     
     if (updatableFields.canUpdateEventStart || updatableFields.canUpdateEventEnd) {
       if (updatableFields.canUpdateEventStart) {
-        eventDates.start = new Date(eventYearForm.event_dates.start + 'T00:00:00')
+        eventDates.start = startOfIstDay(eventYearForm.event_dates.start)
         hasEventDates = true
       }
       if (updatableFields.canUpdateEventEnd) {
-        eventDates.end = new Date(eventYearForm.event_dates.end + 'T23:59:59')
+        eventDates.end = endOfIstDay(eventYearForm.event_dates.end)
         hasEventDates = true
       }
       if (hasEventDates) {
@@ -354,18 +350,18 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
       const finalRegDates = {
         start: updatableFields.canUpdateRegStart 
           ? eventYearForm.registration_dates.start 
-          : (editingEventYear.registration_dates.start ? new Date(editingEventYear.registration_dates.start).toISOString().split('T')[0] : ''),
+          : toIstDateString(editingEventYear.registration_dates.start),
         end: updatableFields.canUpdateRegEnd 
           ? eventYearForm.registration_dates.end 
-          : (editingEventYear.registration_dates.end ? new Date(editingEventYear.registration_dates.end).toISOString().split('T')[0] : '')
+          : toIstDateString(editingEventYear.registration_dates.end)
       }
       const finalEventDates = {
         start: updatableFields.canUpdateEventStart 
           ? eventYearForm.event_dates.start 
-          : (editingEventYear.event_dates.start ? new Date(editingEventYear.event_dates.start).toISOString().split('T')[0] : ''),
+          : toIstDateString(editingEventYear.event_dates.start),
         end: updatableFields.canUpdateEventEnd 
           ? eventYearForm.event_dates.end 
-          : (editingEventYear.event_dates.end ? new Date(editingEventYear.event_dates.end).toISOString().split('T')[0] : '')
+          : toIstDateString(editingEventYear.event_dates.end)
       }
       
       const dateValidation = validateDateRelationships(finalRegDates, finalEventDates)
@@ -417,14 +413,7 @@ function AdminDashboardModal({ isOpen, onClose, onStatusPopup, selectedEventId, 
   const handleEditEventYear = (eventYear) => {
     setEditingEventYear(eventYear)
     // Format dates for date input (YYYY-MM-DD)
-    const formatDateForInput = (dateString) => {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
+    const formatDateForInput = (dateString) => toIstDateString(dateString)
     setEventYearForm({
       event_year: eventYear.event_year.toString(),
       event_name: eventYear.event_name,

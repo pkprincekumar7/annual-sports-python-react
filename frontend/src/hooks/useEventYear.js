@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchWithAuth } from '../utils/api'
 import logger from '../utils/logger'
+import { currentIstYear } from '../utils/istDates'
 import { useEventYears } from './useEventYears'
 import { useSelectedEvent } from '../context/SelectedEventContext'
 
@@ -94,14 +95,14 @@ export function useEventYear(selectedEventIdOverride = null) {
                 logger.info('Using latest event year as fallback after login:', latestEventYear.event_year)
               } else {
                 // Couldn't fetch latest event year - use current year as last resort
-                const currentYear = new Date().getFullYear()
+                const currentYear = currentIstYear()
                 setEventYear(currentYear)
                 setEventYearConfig(null)
                 setError(data.error || 'No active event year found and could not fetch latest event year')
               }
             } else {
               // Not logged in - use current year as fallback
-              const currentYear = new Date().getFullYear()
+              const currentYear = currentIstYear()
               setEventYear(currentYear)
               setEventYearConfig(null)
               setError(data.error || 'No active event year found')
@@ -124,13 +125,13 @@ export function useEventYear(selectedEventIdOverride = null) {
             logger.info('Using latest event year as fallback after error:', latestEventYear.event_year)
           } else {
             // Fallback to current year
-            const currentYear = new Date().getFullYear()
+            const currentYear = currentIstYear()
             setEventYear(currentYear)
             setEventYearConfig(null)
           }
         } else {
           // Not logged in - fallback to current year
-          const currentYear = new Date().getFullYear()
+          const currentYear = currentIstYear()
           setEventYear(currentYear)
           setEventYearConfig(null)
         }

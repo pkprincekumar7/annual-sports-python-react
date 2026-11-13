@@ -34,6 +34,16 @@ from ..match_validation import (
     validate_match_type_for_sport,
 )
 from ..sport_helpers import normalize_sport_name
+from ..ist_dates import (
+    format_date_ist,
+    ist_day_after,
+    ist_day_before,
+    ist_end_of_day,
+    ist_midnight_on,
+    now_ist_midnight,
+    to_utc_iso,
+    utc_naive_for_storage,
+)
 from ..validators import trim_object_fields
 
 
@@ -51,29 +61,16 @@ def _parse_object_id(value: str) -> Optional[ObjectId]:
 def _parse_match_date(value: str) -> Optional[datetime]:
     if not value:
         return None
-    normalized = value if "T" in value else f"{value}T00:00:00"
-    try:
-        return datetime.fromisoformat(normalized.replace("Z", "+00:00"))
-    except Exception:
-        return None
+    return utc_naive_for_storage(value, end_of_day=False)
 
 
-def _format_date(date_value: datetime) -> str:
-    day = date_value.day
-    month = date_value.strftime("%b")
-    year = date_value.year
-    ordinal = _ordinal(day)
-    return f"{ordinal} {month} {year}"
-
-
-def _ordinal(day: int) -> str:
-    if day % 10 == 1 and day % 100 != 11:
-        return f"{day}st"
-    if day % 10 == 2 and day % 100 != 12:
-        return f"{day}nd"
-    if day % 10 == 3 and day % 100 != 13:
-        return f"{day}rd"
-    return f"{day}th"
+def _event_date_range_label(event_year_doc: Dict[str, Any]) -> str:
+    event_dates = event_year_doc.get("event_dates") or {}
+    start = event_dates.get("start")
+    end = event_dates.get("end")
+    if start and end:
+        return f"{format_date_ist(start)} to {format_date_ist(end)}"
+    return f"{start} to {end}"
 
 
 def _serialize_match(match: Dict[str, Any]) -> Dict[str, Any]:
@@ -81,7 +78,7 @@ def _serialize_match(match: Dict[str, Any]) -> Dict[str, Any]:
     if "_id" in data:
         data["_id"] = str(data["_id"])
     if "match_date" in data and isinstance(data["match_date"], datetime):
-        data["match_date"] = data["match_date"].isoformat()
+        data["match_date"] = to_utc_iso(data["match_date"])
     return data
 
 
@@ -281,12 +278,7 @@ async def create_match(
         return send_error_response(403, str(exc))
 
     if not is_match_date_within_event_range(match_date, event_year_doc):
-        event_start = _parse_match_date(event_year_doc.get("event_dates", {}).get("start"))
-        event_end = _parse_match_date(event_year_doc.get("event_dates", {}).get("end"))
-        if event_start and event_end:
-            date_label = f"{_format_date(event_start)} to {_format_date(event_end)}"
-        else:
-            date_label = f"{event_year_doc.get('event_dates', {}).get('start')} to {event_year_doc.get('event_dates', {}).get('end')}"
+        date_label = _event_date_range_label(event_year_doc)
         return send_error_response(
             400,
             f"Match date must be within event date range ({date_label})",
@@ -512,12 +504,12 @@ async def create_match(
         if league_matches:
             latest_league_date = league_matches[0].get("match_date")
             match_date_obj = _parse_match_date(match_date)
-            if isinstance(latest_league_date, datetime) and match_date_obj:
-                if match_date_obj.date() < latest_league_date.date():
+            if latest_league_date and match_date_obj:
+                if ist_day_before(match_date, latest_league_date):
                     return send_error_response(
                         400,
                         f"{'Knockout' if match_type == 'knockout' else 'Final'} match date cannot be before all league matches. "
-                        f"Latest league match date: {latest_league_date.date()}",
+                        f"Latest league match date: {format_date_ist(latest_league_date)}",
                     )
         if match_type == "final":
             all_knockout = await event_schedule_collection().find(
@@ -535,12 +527,12 @@ async def create_match(
             if knockout_matches:
                 latest_knockout_date = knockout_matches[0].get("match_date")
                 match_date_obj = _parse_match_date(match_date)
-                if isinstance(latest_knockout_date, datetime) and match_date_obj:
-                    if match_date_obj.date() < latest_knockout_date.date():
+                if latest_knockout_date and match_date_obj:
+                    if ist_day_before(match_date, latest_knockout_date):
                         return send_error_response(
                             400,
                             "Final match date cannot be before all knockout matches. "
-                            f"Latest knockout match date: {latest_knockout_date.date()}",
+                            f"Latest knockout match date: {format_date_ist(latest_knockout_date)}",
                         )
 
     final_error = await validate_final_match_requirement(
@@ -575,8 +567,7 @@ async def create_match(
     match_date_obj = _parse_match_date(match_date)
     if not match_date_obj:
         return send_error_response(400, "Invalid match_date format")
-    today = datetime.now().date()
-    if match_date_obj.date() < today:
+    if ist_day_before(match_date, now_ist_midnight()):
         return send_error_response(400, "Match date must be today or a future date")
 
     last_match = await event_schedule_collection().find_one(
@@ -682,12 +673,7 @@ async def update_match(
 
     if match_date is not None:
         if not is_match_date_within_event_range(match_date, event_year_doc):
-            event_start = _parse_match_date(event_year_doc.get("event_dates", {}).get("start"))
-            event_end = _parse_match_date(event_year_doc.get("event_dates", {}).get("end"))
-            if event_start and event_end:
-                date_label = f"{_format_date(event_start)} to {_format_date(event_end)}"
-            else:
-                date_label = f"{event_year_doc.get('event_dates', {}).get('start')} to {event_year_doc.get('event_dates', {}).get('end')}"
+            date_label = _event_date_range_label(event_year_doc)
             return send_error_response(
                 400,
                 f"Match date must be within event date range ({date_label})",
@@ -704,8 +690,9 @@ async def update_match(
         if isinstance(match_date_obj, str):
             match_date_obj = _parse_match_date(match_date_obj)
 
-    now = datetime.now().date()
-    is_future_match = match_date_obj.date() > now if isinstance(match_date_obj, datetime) else False
+    is_future_match = (
+        bool(match_date_obj) and ist_day_after(match_date_obj, now_ist_midnight())
+    )
 
     if status is not None:
         if is_future_match and status != "scheduled":
@@ -720,18 +707,11 @@ async def update_match(
                 f'Cannot change status from "{previous_status}". Once a match is {previous_status}, the status cannot be changed.',
             )
         if status in {"completed", "draw", "cancelled"}:
-            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            event_start = _parse_match_date(event_year_doc.get("event_dates", {}).get("start"))
-            event_end = _parse_match_date(event_year_doc.get("event_dates", {}).get("end"))
-            if event_start:
-                event_start = event_start.replace(hour=0, minute=0, second=0, microsecond=0)
-            if event_end:
-                event_end = event_end.replace(hour=23, minute=59, second=59, microsecond=999000)
+            today = now_ist_midnight()
+            event_start = ist_midnight_on(event_year_doc.get("event_dates", {}).get("start"))
+            event_end = ist_end_of_day(event_year_doc.get("event_dates", {}).get("end"))
             if not event_start or not event_end or not (event_start <= today <= event_end):
-                if event_start and event_end:
-                    date_label = f"{_format_date(event_start)} to {_format_date(event_end)}"
-                else:
-                    date_label = f"{event_year_doc.get('event_dates', {}).get('start')} to {event_year_doc.get('event_dates', {}).get('end')}"
+                date_label = _event_date_range_label(event_year_doc)
                 return send_error_response(
                     400,
                     f'Match status can only be set to "{status}" within event date range ({date_label})',

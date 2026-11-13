@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from ..auth import admin_dependency, auth_dependency, get_request_token
 from ..cache import cache
-from ..date_restrictions import require_registration_period
+from ..date_restrictions import require_sport_management_period
 from ..db import sports_collection
 from ..errors import send_error_response, send_success_response
 from ..external_services import (
@@ -73,7 +73,7 @@ async def create_sport(
     request: Request,
     _: None = Depends(auth_dependency),
     __: None = Depends(admin_dependency),
-    ___: None = Depends(require_registration_period),
+    ___: None = Depends(require_sport_management_period),
 ):
     body = trim_object_fields(await request.json())
     created_by = body.pop("createdBy", None)
@@ -158,7 +158,7 @@ async def update_sport(
     request: Request,
     _: None = Depends(auth_dependency),
     __: None = Depends(admin_dependency),
-    ___: None = Depends(require_registration_period),
+    ___: None = Depends(require_sport_management_period),
 ):
     body = trim_object_fields(await request.json())
     created_by = body.pop("createdBy", None)
@@ -263,7 +263,7 @@ async def delete_sport(
     request: Request,
     _: None = Depends(auth_dependency),
     __: None = Depends(admin_dependency),
-    ___: None = Depends(require_registration_period),
+    ___: None = Depends(require_sport_management_period),
 ):
     object_id = _parse_object_id(sport_id)
     if not object_id:
