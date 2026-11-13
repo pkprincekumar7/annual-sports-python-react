@@ -350,7 +350,7 @@ async def bulk_player_enrollments(
     event_id = event_year_data.get("doc", {}).get("event_id")
 
     players = await players_collection().find(
-        {"reg_number": {"$in": reg_numbers}}, {"reg_number": 1, "full_name": 1}
+        {"reg_number": {"$in": reg_numbers}}, {"_id": 0, "reg_number": 1, "full_name": 1}
     ).to_list(length=None)
     found_reg_numbers = [p.get("reg_number") for p in players]
     not_found = [reg for reg in reg_numbers if reg not in found_reg_numbers]
