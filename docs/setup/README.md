@@ -47,6 +47,8 @@ This folder contains setup-focused documentation for the new microservices struc
 - `aws/ecs-backend.md` - AWS ECS backend deployment (ALB, TLS)
 - `../infra/aws/ecs-backend/README.md` - AWS ECS Fargate with Terraform (backend)
 - `aws/frontend.md` - AWS frontend hosting (S3 + CloudFront)
+- `aws/quick-aws-ubuntu-setup.md` - Full stack on one Ubuntu EC2 with HTTPS (Route 53 + Let's Encrypt, no load balancer)
+- `aws/quick-aws-amazon-linux-setup.md` - Full stack on one Amazon Linux 2023 EC2 with HTTPS (Route 53 + Let's Encrypt, no load balancer)
 - `../infra/aws/frontend/README.md` - AWS frontend with Terraform (S3 + CloudFront)
 
 ## Azure
