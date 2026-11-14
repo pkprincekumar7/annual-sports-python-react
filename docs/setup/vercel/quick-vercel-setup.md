@@ -13,6 +13,7 @@ Run the whole app on Vercel and serve it at `https://sports.learning-dev.com`:
 - `frontend/vercel.json` - Vite build settings, the API rewrites to each service, and the SPA fallback to `index.html`.
 - `frontend/.vercelignore`, `*-service/.vercelignore` - keep `.env` files, Dockerfiles and caches out of uploads.
 - `*-service/.python-version` - pins Python 3.12, the same as the Dockerfiles.
+- `*-service/vercel.json` - runs each service's functions in **Mumbai (`bom1`)**, next to MongoDB Atlas and Upstash. Without it Vercel uses Washington DC (`iad1`), and every database and cache call crosses the world. If your Atlas cluster is in another region, change `bom1` in all 8 files to the closest [Vercel region](https://vercel.com/docs/edge-network/regions).
 - `*-service/app/cache.py` + `CACHE_PREFIX` setting - prefixes every cache key with the service name, so all services can share one Upstash Redis database without reading or clearing each other's keys. Empty by default, so Docker Compose behaves exactly as before.
 
 ## Limits to know first
@@ -33,7 +34,7 @@ Run the whole app on Vercel and serve it at `https://sports.learning-dev.com`:
 
 ## Step 2 - Upstash Redis
 
-1. Go to **Vercel → Storage → Marketplace → Upstash for Redis → Create**, choose the free plan and a region close to your functions (for example Mumbai if you use `bom1`).
+1. Go to **Vercel → Storage → Marketplace → Upstash for Redis → Create**, choose the free plan and the same region as your functions (Mumbai, to match `bom1` in the services' `vercel.json`).
 2. Copy the **TCP URL**. It starts with `rediss://` and contains the password.
 
 All services share this one database. `CACHE_PREFIX` keeps their keys apart.
@@ -138,5 +139,6 @@ Nothing changes locally. `docker compose up` still uses its own Redis databases 
 - **Requests return a Vercel login page:** Deployment Protection is on for that service (step 4).
 - **MongoDB timeout errors in a function's logs:** Atlas Network Access does not allow `0.0.0.0/0`, or `MONGODB_URI` is wrong.
 - **"Python entrypoint not found" during build:** the project's Root Directory is wrong. It must be the service folder that contains `main.py`.
+- **Every page is slow, not just the first request:** check where the functions run. `curl -sI https://annual-sports-identity.vercel.app/health | grep -i x-vercel-id` should look like `bom1::bom1::...` (the second name is where the function ran). If it shows `bom1::iad1::...`, the service was deployed without its `vercel.json` region; redeploy it from the latest commit. Also check that Atlas and Upstash are in the same region.
 - **Slow first request:** this is a cold start. Requests are fast again while traffic keeps the functions warm.
 - **Function logs:** open the project → **Logs** (or **Deployments → the deployment → Functions**).
