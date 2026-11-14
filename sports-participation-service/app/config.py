@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     app_env: str = os.getenv("APP_ENV", "development")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    # Key prefix for a Redis database shared by several services (e.g. "identity:").
+    cache_prefix: str = os.getenv("CACHE_PREFIX", "")
 
     event_configuration_url: str = os.getenv("EVENT_CONFIGURATION_URL", "").rstrip("/")
     enrollment_url: str = os.getenv("ENROLLMENT_URL", "").rstrip("/")

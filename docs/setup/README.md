@@ -51,6 +51,9 @@ This folder contains setup-focused documentation for the new microservices struc
 - `aws/quick-aws-amazon-linux-setup.md` - Full stack on one Amazon Linux 2023 EC2 with HTTPS (Route 53 + Let's Encrypt, no load balancer)
 - `../infra/aws/frontend/README.md` - AWS frontend with Terraform (S3 + CloudFront)
 
+## Vercel
+- `vercel/quick-vercel-setup.md` - Frontend + 8 FastAPI services on Vercel (Upstash Redis, MongoDB Atlas, custom domain)
+
 ## Azure
 - `azure/aks.md` - Azure AKS deployment (Terraform entry point)
 - `../infra/azure/aks/README.md` - Azure AKS with Terraform

@@ -4,7 +4,7 @@ Run the full Docker Compose stack on one **Amazon Linux 2023** EC2 instance and 
 
 - Route 53 points the domain at the instance's Elastic IP.
 - nginx (in Docker) terminates HTTPS with a free Let's Encrypt certificate that renews automatically.
-- No load balancer or CloudFront, so the only cost is the instance.
+- No load balancer or CloudFront. See **Cost** under Notes for what you pay.
 
 > An ACM certificate (for example `*.learning-dev.com`) **cannot** be used here. ACM certificates only attach to AWS services such as load balancers and CloudFront, not to an EC2 instance.
 
@@ -46,11 +46,11 @@ Go to **EC2 → Instances → Launch instances** and set:
 
 Click **Launch instance**.
 
-### 2. Elastic IP (free while attached to a running instance)
+### 2. Elastic IP
 
 Go to **EC2 → Elastic IPs → Allocate Elastic IP address → Allocate**. Then choose **Actions → Associate**, pick the instance, and click **Associate**.
 
-Without this, the public IP changes every time the instance is stopped and started.
+Without this, the public IP changes every time the instance is stopped and started. AWS charges about $0.005 per hour (about $3.60 a month) for every public IPv4 address. The Elastic IP replaces the instance's automatic public IP, so it adds no extra cost while attached. Release it if you delete the instance, because an unattached Elastic IP is still charged.
 
 ### 3. Route 53 record
 
@@ -259,7 +259,7 @@ Always use both `-f` files on the server. A plain `docker compose up` falls back
 
 - No application code changes are needed. The frontend calls the API on the same origin (`VITE_API_URL: /`), CORS allows all origins, and no IP or URL is hardcoded.
 - Never open ports 8080 or 6379 (Redis) in the security group. Only 22, 80 and 443 should be open.
-- **Cost:** only the instance. The Elastic IP is free while attached to a running instance, and the certificate is free.
+- **Cost:** the EC2 instance, its EBS disk, one public IPv4 address (about $3.60 a month), the Route 53 hosted zone ($0.50 a month), and the yearly domain renewal. Let's Encrypt certificates are free, and creating the `sports` DNS record costs nothing extra. Data transfer out is free up to 100 GB a month.
 
 ## Troubleshooting
 

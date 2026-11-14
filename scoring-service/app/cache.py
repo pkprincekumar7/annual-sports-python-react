@@ -14,15 +14,26 @@ CACHE_TTL: Dict[str, int] = {
 
 
 class RedisCache:
-    def __init__(self, redis_url: str) -> None:
+    """Redis-backed response cache.
+
+    ``prefix`` namespaces every key (for example ``"identity:"``) so several
+    services can safely share one Redis database, such as a hosted Redis on
+    Vercel. With an empty prefix, keys are stored exactly as before.
+    """
+
+    def __init__(self, redis_url: str, prefix: str = "") -> None:
         self._client = Redis.from_url(redis_url, decode_responses=False)
+        self._prefix = prefix
+
+    def _key(self, url: str) -> str:
+        return f"{self._prefix}{url}"
 
     def _ttl_ms(self, url: str) -> int:
         return CACHE_TTL.get(url, CACHE_TTL["default"])
 
     def get(self, url: str) -> Optional[Any]:
         try:
-            data = self._client.get(url)
+            data = self._client.get(self._key(url))
         except RedisError:
             return None
         if data is None:
@@ -35,14 +46,18 @@ class RedisCache:
     def set(self, url: str, data: Any) -> None:
         try:
             payload = pickle.dumps(data)
-            self._client.set(url, payload, px=self._ttl_ms(url))
+            self._client.set(self._key(url), payload, px=self._ttl_ms(url))
         except RedisError:
             return None
 
     def clear(self, url: Optional[str] = None) -> None:
         try:
             if url:
-                self._client.delete(url)
+                self._client.delete(self._key(url))
+            elif self._prefix:
+                # Shared database: only remove this service's keys.
+                for key in self._client.scan_iter(match=f"{self._prefix}*"):
+                    self._client.delete(key)
             else:
                 self._client.flushdb()
         except RedisError:
@@ -50,11 +65,11 @@ class RedisCache:
 
     def clear_pattern(self, pattern: str) -> None:
         try:
-            for key in self._client.scan_iter(match=f"*{pattern}*"):
+            for key in self._client.scan_iter(match=f"{self._prefix}*{pattern}*"):
                 self._client.delete(key)
         except RedisError:
             return None
 
 
 settings = get_settings()
-cache = RedisCache(settings.redis_url)
+cache = RedisCache(settings.redis_url, settings.cache_prefix)

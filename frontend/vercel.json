@@ -1,0 +1,76 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/identities",
+      "destination": "https://annual-sports-identity.vercel.app/identities"
+    },
+    {
+      "source": "/identities/:path*",
+      "destination": "https://annual-sports-identity.vercel.app/identities/:path*"
+    },
+    {
+      "source": "/enrollments",
+      "destination": "https://annual-sports-enrollment.vercel.app/enrollments"
+    },
+    {
+      "source": "/enrollments/:path*",
+      "destination": "https://annual-sports-enrollment.vercel.app/enrollments/:path*"
+    },
+    {
+      "source": "/departments",
+      "destination": "https://annual-sports-department.vercel.app/departments"
+    },
+    {
+      "source": "/departments/:path*",
+      "destination": "https://annual-sports-department.vercel.app/departments/:path*"
+    },
+    {
+      "source": "/sports-participations",
+      "destination": "https://annual-sports-sports-participation.vercel.app/sports-participations"
+    },
+    {
+      "source": "/sports-participations/:path*",
+      "destination": "https://annual-sports-sports-participation.vercel.app/sports-participations/:path*"
+    },
+    {
+      "source": "/event-configurations",
+      "destination": "https://annual-sports-event-configuration.vercel.app/event-configurations"
+    },
+    {
+      "source": "/event-configurations/:path*",
+      "destination": "https://annual-sports-event-configuration.vercel.app/event-configurations/:path*"
+    },
+    {
+      "source": "/schedulings",
+      "destination": "https://annual-sports-scheduling.vercel.app/schedulings"
+    },
+    {
+      "source": "/schedulings/:path*",
+      "destination": "https://annual-sports-scheduling.vercel.app/schedulings/:path*"
+    },
+    {
+      "source": "/scorings",
+      "destination": "https://annual-sports-scoring.vercel.app/scorings"
+    },
+    {
+      "source": "/scorings/:path*",
+      "destination": "https://annual-sports-scoring.vercel.app/scorings/:path*"
+    },
+    {
+      "source": "/reportings",
+      "destination": "https://annual-sports-reporting.vercel.app/reportings"
+    },
+    {
+      "source": "/reportings/:path*",
+      "destination": "https://annual-sports-reporting.vercel.app/reportings/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
