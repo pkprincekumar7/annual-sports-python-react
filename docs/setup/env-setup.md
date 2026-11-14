@@ -22,7 +22,7 @@ Open each `.env` and update the secret values for your environment. Commonly upd
 
 - `MONGODB_URI`
 - `JWT_SECRET`
-- `GMAIL_APP_PASSWORD`
+- `GMAIL_USER` and `GMAIL_APP_PASSWORD` (identity-service, Gmail)
 - `SENDGRID_API_KEY`
 - `RESEND_API_KEY`
 - `SMTP_PASSWORD`

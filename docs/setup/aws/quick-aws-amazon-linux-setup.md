@@ -157,7 +157,7 @@ Check that every service got the same values (it should print `1` twice):
 grep -h '^MONGODB_URI=' */.env | sort -u | wc -l && grep -h '^JWT_SECRET=' */.env | sort -u | wc -l
 ```
 
-If password-reset emails are needed, set one email provider's key in `identity-service/.env` (for example `GMAIL_APP_PASSWORD`):
+If password-reset emails are needed, set email vars in `identity-service/.env` (Gmail: `GMAIL_USER` and `GMAIL_APP_PASSWORD`):
 
 ```bash
 nano identity-service/.env
